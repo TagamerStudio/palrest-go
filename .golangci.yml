@@ -1,0 +1,27 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - contextcheck
+    - durationcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - gocognit
+    - gocritic
+    - nilerr
+    - noctx
+
+  settings:
+    gocognit:
+      min-complexity: 15
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
