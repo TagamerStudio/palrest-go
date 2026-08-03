@@ -72,7 +72,7 @@ Messages passed to `MakeAnnouncement`, `KickPlayer`, `BanPlayer` and
 are omitted from the payload (and rejected entirely for announcements).
 
 `ShutdownServer` accepts a non-negative `waitTime`; the official documentation
-does not define the behavior of `0`. Use `StopServer` for a force stop.
+does not define the behavior of `0` (observed server behavior is immediate shutdown). Use `StopServer` for a force stop.
 
 ## Security
 
