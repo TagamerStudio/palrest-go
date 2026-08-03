@@ -71,8 +71,8 @@ Messages passed to `MakeAnnouncement`, `KickPlayer`, `BanPlayer` and
 `ShutdownServer` are trimmed of leading/trailing whitespace; empty messages
 are omitted from the payload (and rejected entirely for announcements).
 
-`ShutdownServer` with `waitTime` 0 shuts the server down immediately; use
-`StopServer` for a force stop.
+`ShutdownServer` accepts a non-negative `waitTime`; the official documentation
+does not define the behavior of `0`. Use `StopServer` for a force stop.
 
 ## Security
 
