@@ -197,8 +197,9 @@ func normalizeBaseURL(raw, defaultPort string) (string, error) {
 		return "", errors.New("base URL is required")
 	}
 
-	if !strings.Contains(raw, "://") {
-		raw = "http://" + raw
+	raw, err := withScheme(raw)
+	if err != nil {
+		return "", err
 	}
 
 	u, err := url.Parse(raw)
@@ -243,6 +244,19 @@ func normalizeBaseURL(raw, defaultPort string) (string, error) {
 	// with an invalid escape error.
 	host = strings.ReplaceAll(host, "%", "%25")
 	return fmt.Sprintf("%s://%s", u.Scheme, net.JoinHostPort(host, port)), nil
+}
+
+// withScheme prepends the default scheme to a base URL that omits it and
+// rejects prefixes that look like a scheme missing the "//" delimiter (e.g.,
+// "http:/host"), which url.Parse would otherwise rewrite as a bogus host.
+func withScheme(raw string) (string, error) {
+	if strings.Contains(raw, "://") {
+		return raw, nil
+	}
+	if strings.HasPrefix(raw, "http:/") || strings.HasPrefix(raw, "https:/") {
+		return "", fmt.Errorf("invalid base URL %q: malformed scheme (missing '//')", raw)
+	}
+	return "http://" + raw, nil
 }
 
 // validHostname reports whether host is a valid IP address or DNS hostname.

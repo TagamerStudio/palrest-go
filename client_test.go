@@ -104,6 +104,8 @@ func TestNewClient_RejectsUnsupportedBaseURLs(t *testing.T) {
 		"http://foo..bar.com:8212",
 		"http://.:8212",
 		"http://127.0.0.1:+8212",
+		"http:/127.0.0.1:8212",
+		"https:/127.0.0.1:8212",
 		"http://" + strings.Repeat("a", 254) + ".com:8212",
 	}
 	for _, raw := range urls {
