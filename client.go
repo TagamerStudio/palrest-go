@@ -446,11 +446,11 @@ func (c *Client) post(ctx context.Context, path string, body any) error {
 		return err
 	}
 	trimmed := bytes.TrimSpace(bodyBytes)
-	if len(trimmed) == 0 {
-		return nil
-	}
 	if contentType != "" && !strings.HasPrefix(contentType, "application/json") {
 		return fmt.Errorf("POST %s: unexpected content-type %q", path, contentType)
+	}
+	if len(trimmed) == 0 {
+		return nil
 	}
 	if !json.Valid(trimmed) {
 		return fmt.Errorf("POST %s: response body is not valid JSON", path)

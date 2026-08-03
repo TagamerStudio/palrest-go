@@ -410,6 +410,29 @@ func TestClient_Post_RejectsHTMLSuccess(t *testing.T) {
 	}
 }
 
+func TestClient_Post_RejectsHTMLContentTypeWithEmptyBody(t *testing.T) {
+	handler := http.NewServeMux()
+	handler.HandleFunc("/v1/api/save", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+	})
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	client, err := NewClient(srv.URL, "secret")
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	err = client.SaveServerState(context.Background())
+	if err == nil {
+		t.Fatal("expected error for empty success body with non-JSON content type")
+	}
+	if !strings.Contains(err.Error(), `unexpected content-type "text/html"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestClient_Post_RejectsNonJSONBody(t *testing.T) {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/v1/api/stop", func(w http.ResponseWriter, r *http.Request) {
