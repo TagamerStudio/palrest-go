@@ -932,6 +932,13 @@ const (
 	}`
 )
 
+// TestClient_GetGameData_FullSchema decodes the /game-data snapshot documented
+// in the official REST API reference (v1.0.2). The strict decode of the
+// snapshot pins the top-level schema; actor-inner field coverage is pinned
+// against the documented fixtures via the two direct strict decodes below.
+// The runtime decode path (Actor.UnmarshalJSON) deliberately tolerates unknown
+// actor fields and kinds for forward compatibility, so unknown fields inside
+// an actor must not be rejected here.
 func TestClient_GetGameData_FullSchema(t *testing.T) {
 	client := testClientServing(t, "/v1/api/game-data", gameDataSnapshot)
 	data, err := client.GetGameData(context.Background())
@@ -1171,6 +1178,22 @@ func TestClient_GetGameData_UnknownActorKind(t *testing.T) {
 	actor := data.ActorData[0]
 	if actor.Type != "FutureKind" || actor.Character != nil || actor.PalBox != nil {
 		t.Fatalf("unexpected unknown actor: %+v", actor)
+	}
+}
+
+func TestClient_GetGameData_UnknownActorFieldTolerated(t *testing.T) {
+	data := fetchGameData(t, `{
+		"Time": "2026-06-17 13:00:40",
+		"FPS": 60,
+		"AverageFPS": 30,
+		"ActorData": [{"Type": "Character", "InstanceID": "char-1", "FutureField": 123}]
+	}`)
+
+	if len(data.ActorData) != 1 || data.ActorData[0].Character == nil {
+		t.Fatalf("unexpected snapshot: %+v", data)
+	}
+	if c := data.ActorData[0].Character; c.InstanceID != "char-1" {
+		t.Fatalf("unexpected character actor: %+v", c)
 	}
 }
 
