@@ -427,7 +427,7 @@ func (c *Client) requestInto(ctx context.Context, method, path string, body, out
 		if contentType == "" {
 			contentType = "unknown"
 		}
-		return fmt.Errorf("failed to decode %s %s (content-type %q): %w; body: %.200s", method, path, contentType, err, bodyBytes)
+		return fmt.Errorf("failed to decode %s %s (content-type %q): %w", method, path, contentType, err)
 	}
 	return nil
 }

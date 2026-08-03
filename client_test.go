@@ -301,8 +301,8 @@ func TestClient_NonJSONResponse(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error decoding non-JSON response")
 	}
-	if !strings.Contains(err.Error(), `content-type "text/plain"`) || !strings.Contains(err.Error(), "hello world") {
-		t.Fatalf("expected content-type and body in error, got: %v", err)
+	if !strings.Contains(err.Error(), `content-type "text/plain"`) {
+		t.Fatalf("expected content-type in error, got: %v", err)
 	}
 }
 
