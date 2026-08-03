@@ -165,7 +165,7 @@ type CharacterActor struct {
 	RotationY         float64 `json:"RotationY"`
 	RotationZ         float64 `json:"RotationZ"`
 	Stage             string  `json:"Stage"`
-	IsActive          string  `json:"IsActive"`
+	IsActive          string  `json:"IsActive"` // "true" or "false" per API schema
 }
 
 // PalBoxActor is an actor of type "PalBox": a guild base camp.

@@ -72,6 +72,7 @@ func WithMaxResponseBytes(maxBytes int) Option {
 // Close becomes a no-op and WithTimeout is ignored. The injected client's own
 // redirect policy is used as-is; the internally created client never follows
 // redirects and never uses environment proxies.
+// Use this to configure TLS (e.g., self-signed certs common in LAN deployments).
 func WithHTTPClient(httpClient *http.Client) Option {
 	return func(c *Client) {
 		c.client = httpClient
@@ -237,9 +238,9 @@ func normalizeBaseURL(raw, defaultPort string) (string, error) {
 		return "", fmt.Errorf("%w in base URL", err)
 	}
 
-	// url.Parse unescapes %25 in zone-scoped IPv6 hosts; the rebuilt URL must
-	// keep the percent-encoding or the next parse of a request URL fails with
-	// an invalid escape error.
+	// url.Parse unescapes %25 -> % in zone-scoped IPv6 hosts (e.g., %25eth0 becomes %eth0).
+	// The rebuilt URL must re-encode % as %25 or the next parse of a request URL fails
+	// with an invalid escape error.
 	host = strings.ReplaceAll(host, "%", "%25")
 	return fmt.Sprintf("%s://%s", u.Scheme, net.JoinHostPort(host, port)), nil
 }
@@ -382,7 +383,7 @@ func (c *Client) request(ctx context.Context, method, path string, body any, max
 	defer func() { _ = resp.Body.Close() }()
 
 	if maxBytes == math.MaxInt {
-		maxBytes--
+		maxBytes = math.MaxInt - 1
 	}
 	bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, int64(maxBytes)+1))
 	if err != nil {
