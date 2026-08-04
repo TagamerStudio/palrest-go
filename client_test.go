@@ -33,6 +33,28 @@ func TestNewClient_NormalizesBaseURL(t *testing.T) {
 	}
 }
 
+// TestNewClient_CaseInsensitiveScheme pins that url.Parse normalizes the
+// scheme to lowercase, so uppercase/mixed-case schemes are accepted and
+// normalized instead of being rejected.
+func TestNewClient_CaseInsensitiveScheme(t *testing.T) {
+	tests := []struct {
+		raw  string
+		want string
+	}{
+		{"HTTP://127.0.0.1:17999", "http://127.0.0.1:17999"},
+		{"HtTpS://example.com:17999", "https://example.com:17999"},
+	}
+	for _, tt := range tests {
+		client, err := NewClient(tt.raw, "secret")
+		if err != nil {
+			t.Fatalf("NewClient(%q) failed: %v", tt.raw, err)
+		}
+		if client.baseURL != tt.want {
+			t.Fatalf("baseURL for %q, got %s, want %s", tt.raw, client.baseURL, tt.want)
+		}
+	}
+}
+
 func TestNewClient_DefaultPort(t *testing.T) {
 	client, err := NewClient("127.0.0.1", "secret")
 	if err != nil {
