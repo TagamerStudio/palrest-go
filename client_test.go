@@ -1547,6 +1547,19 @@ func TestClient_Close_DoesNotCloseInjectedClient(t *testing.T) {
 	}
 }
 
+func TestClient_WithHTTPClientNilFallsBackToInternal(t *testing.T) {
+	client, err := NewClient("127.0.0.1:17999", "secret", WithHTTPClient(nil))
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+	if client.client == nil {
+		t.Fatal("expected an internal http.Client to be created")
+	}
+	if !client.ownClient {
+		t.Fatal("expected the internal client to be owned by the Client")
+	}
+}
+
 func TestClient_ResponseBodyLimit(t *testing.T) {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/v1/api/info", func(w http.ResponseWriter, r *http.Request) {
