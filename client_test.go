@@ -531,6 +531,25 @@ func TestClient_Post_AcceptsJSONSuccess(t *testing.T) {
 	}
 }
 
+func TestClient_Post_AcceptsTextPlainResponse(t *testing.T) {
+	handler := http.NewServeMux()
+	handler.HandleFunc("/v1/api/announce", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain;charset=utf-8")
+		_, _ = w.Write([]byte("OK"))
+	})
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	client, err := NewClient(srv.URL, "secret")
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	if err := client.MakeAnnouncement(context.Background(), "hello"); err != nil {
+		t.Fatalf("MakeAnnouncement should accept text/plain: %v", err)
+	}
+}
+
 func TestClient_Post_RejectsOversizedSuccessBody(t *testing.T) {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/v1/api/save", func(w http.ResponseWriter, r *http.Request) {
@@ -1311,8 +1330,8 @@ func TestClient_WriteEndpoints(t *testing.T) {
 			mu.Lock()
 			calls = append(calls, writeEndpointCall{path: r.URL.Path, method: r.Method, body: body})
 			mu.Unlock()
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+			w.Header().Set("Content-Type", "text/plain;charset=utf-8")
+			_, _ = w.Write([]byte("OK"))
 		})
 	}
 

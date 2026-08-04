@@ -456,15 +456,19 @@ func (c *Client) getInto(ctx context.Context, path string, out any, maxBytes int
 }
 
 // post performs an HTTP POST and validates the success response. Success
-// bodies must be empty or JSON; a non-JSON body or a mismatched content type
-// indicates a misbehaving proxy or an error page served with status 200 and
-// is treated as a failure. Bodies are capped at postResponseLimitBytes.
+// bodies must be empty, JSON, or plain text. A non-JSON/non-text body or a
+// mismatched content type indicates a misbehaving proxy or an error page
+// served with status 200 and is treated as a failure. Bodies are capped at
+// postResponseLimitBytes.
 func (c *Client) post(ctx context.Context, path string, body any) error {
 	bodyBytes, contentType, err := c.request(ctx, http.MethodPost, path, body, postResponseLimitBytes)
 	if err != nil {
 		return err
 	}
 	trimmed := bytes.TrimSpace(bodyBytes)
+	if strings.HasPrefix(contentType, "text/plain") {
+		return nil
+	}
 	if contentType != "" && !strings.HasPrefix(contentType, "application/json") {
 		return fmt.Errorf("POST %s: unexpected content-type %q", path, contentType)
 	}
