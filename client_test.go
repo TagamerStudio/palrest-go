@@ -171,6 +171,23 @@ func TestNewClient_MalformedSchemeDoesNotLeakCredentials(t *testing.T) {
 	}
 }
 
+func TestNewClient_UnbracketedIPv6Normalized(t *testing.T) {
+	client, err := NewClient("::1:2222", "secret")
+	if err != nil {
+		t.Fatalf("unexpected error creating client: %v", err)
+	}
+
+	if client.baseURL != "http://[::1]:2222" {
+		t.Fatalf("unexpected baseURL: %s", client.baseURL)
+	}
+}
+
+func TestNewClient_UnbracketedIPv6WithoutPortRejected(t *testing.T) {
+	if _, err := NewClient("::1", "secret"); err == nil {
+		t.Fatal("expected error for unbracketed IPv6 without a port")
+	}
+}
+
 func TestNewClient_TrimsWhitespaceBaseURL(t *testing.T) {
 	client, err := NewClient("  127.0.0.1:17999  ", "secret")
 	if err != nil {
