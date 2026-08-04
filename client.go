@@ -174,6 +174,7 @@ func NewClient(baseURL, password string, opts ...Option) (*Client, error) {
 
 // Close releases idle connections held by the internally created http.Client.
 // It is a no-op when a custom client was injected via WithHTTPClient.
+// Calls after Close are not supported; do not issue requests concurrently with Close.
 func (c *Client) Close() error {
 	if c.ownClient {
 		c.client.CloseIdleConnections()
