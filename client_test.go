@@ -156,6 +156,21 @@ func TestNewClient_RedactsUserinfoInErrors(t *testing.T) {
 	}
 }
 
+func TestNewClient_MalformedSchemeDoesNotLeakCredentials(t *testing.T) {
+	for _, raw := range []string{
+		"http:/admin:secret@127.0.0.1:8212",
+		"https:/user:p@ss@example.com:17999",
+	} {
+		_, err := NewClient(raw, "secret")
+		if err == nil {
+			t.Fatalf("expected error for malformed base URL %q", raw)
+		}
+		if strings.Contains(err.Error(), "secret") || strings.Contains(err.Error(), "p@ss") {
+			t.Fatalf("credentials leaked in error message: %v", err)
+		}
+	}
+}
+
 func TestNewClient_TrimsWhitespaceBaseURL(t *testing.T) {
 	client, err := NewClient("  127.0.0.1:17999  ", "secret")
 	if err != nil {

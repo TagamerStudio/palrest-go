@@ -257,7 +257,7 @@ func withScheme(raw string) (string, error) {
 		return raw, nil
 	}
 	if strings.HasPrefix(raw, "http:/") || strings.HasPrefix(raw, "https:/") {
-		return "", fmt.Errorf("invalid base URL %q: malformed scheme (missing '//')", raw)
+		return "", errors.New("invalid base URL: malformed scheme (missing '//')")
 	}
 	return "http://" + raw, nil
 }
