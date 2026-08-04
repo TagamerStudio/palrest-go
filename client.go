@@ -28,7 +28,7 @@ import (
 
 const (
 	defaultPort     = "8212"
-	defaultTimeout  = 10 * time.Second
+	defaultTimeout  = 30 * time.Second
 	defaultUsername = "admin"
 	apiPrefix       = "/v1/api"
 

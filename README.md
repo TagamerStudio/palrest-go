@@ -45,7 +45,7 @@ err = client.MakeAnnouncement(ctx, "Server restart in 5 minutes")
 
 | Option              | Description                                                             |
 |---------------------|-------------------------------------------------------------------------|
-| `WithTimeout(d)`    | HTTP timeout (default: 10s; values `<= 0` are ignored). Only applies to the internally created `http.Client`. |
+| `WithTimeout(d)`    | HTTP timeout (default: 30s; values `<= 0` are ignored). Only applies to the internally created `http.Client`. |
 | `WithHTTPClient(c)` | Inject a custom `http.Client`; its own `Timeout` and redirect policy are used as-is, `WithTimeout` is ignored and `Close()` becomes a no-op. A `nil` client is ignored and falls back to the default internal one. The internal client never follows redirects and ignores environment proxies (`HTTP_PROXY`/`HTTPS_PROXY`). |
 | `WithMaxResponseBytes(n)` | Maximum accepted GET response body size in bytes (default: 10 MiB); larger responses fail with an error. Applies to every GET endpoint, including `/game-data`. POST responses are validated as empty or JSON under a fixed 4 KiB cap. |
 
@@ -62,8 +62,8 @@ and ports outside 1–65535 are rejected.
 > `palrest.WithMaxResponseBytes(64 << 20)`. No other endpoint grows without
 > bound (player counts are capped by the server settings and the remaining
 > responses are fixed-schema). Snapshot generation also takes time on large
-> worlds, so you may need to raise the default 10s timeout too, e.g.
-> `palrest.WithTimeout(30 * time.Second)`.
+> worlds, so you may need to raise the default 30s timeout too, e.g.
+> `palrest.WithTimeout(60 * time.Second)`.
 
 Basic auth is always the fixed `admin` user; only the password is required.
 The password is used exactly as provided (it is not trimmed), so pass it
