@@ -352,8 +352,9 @@ func validatePort(port string) (string, error) {
 // request performs an HTTP call and returns the raw response body together
 // with the response Content-Type. maxBytes bounds the accepted response body
 // size for success responses; error bodies are read under maxErrorBodyBytes
-// regardless. Error bodies and oversized success bodies are drained up to
-// drainLimitBytes before the connection is released so it can be reused.
+// regardless. Error and oversized success bodies are drained up to
+// drainLimitBytes so the connection can be reused when the drain consumed
+// the whole body; a larger remaining body forces the connection to close.
 func (c *Client) request(ctx context.Context, method, path string, body any, maxBytes int) ([]byte, string, error) {
 	var reqBody io.Reader
 	if body != nil {
