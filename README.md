@@ -47,7 +47,7 @@ err = client.MakeAnnouncement(ctx, "Server restart in 5 minutes")
 |---------------------|-------------------------------------------------------------------------|
 | `WithTimeout(d)`    | HTTP timeout (default: 30s; values `<= 0` are ignored). Only applies to the internally created `http.Client`. |
 | `WithHTTPClient(c)` | Inject a custom `http.Client`; its own `Timeout` and redirect policy are used as-is, `WithTimeout` is ignored and `Close()` becomes a no-op. A `nil` client is ignored and falls back to the default internal one. The internal client never follows redirects and ignores environment proxies (`HTTP_PROXY`/`HTTPS_PROXY`). |
-| `WithMaxResponseBytes(n)` | Maximum accepted GET response body size in bytes (default: 10 MiB); larger responses fail with an error. Applies to every GET endpoint, including `/game-data`. POST responses are validated as empty or JSON under a fixed 4 KiB cap. |
+| `WithMaxResponseBytes(n)` | Maximum accepted GET response body size in bytes (default: 10 MiB); larger responses fail with an error. Applies to every GET endpoint, including `/game-data`. POST responses are validated against the documented plain-text confirmation of each endpoint under a fixed 4 KiB cap. |
 
 `baseURL` must be a scheme + host (optionally with port); paths, query strings,
 fragments, userinfo and invalid hostnames are rejected since the client always
@@ -92,10 +92,15 @@ and `ResponseBody`. The official API documents `200`/`400`/`401` for most
 endpoints (`/game-data` documents only `200`/`401`); error bodies are
 undocumented and may vary between versions, and are capped at 1 KiB for
 logging. GET responses with an empty or JSON-`null` body are treated as
-protocol errors, and POST success responses must be empty or JSON (a 200 with
-an HTML or otherwise non-JSON body is treated as an error; the content-type
-check runs before the empty-body check so a 200 error page with an empty body
-is still detected, never reported as success). The internally
+protocol errors. POST success responses must be exactly the plain-text
+confirmation documented for the endpoint (`/announce` -> "The message was
+announced.", `/kick` -> "The player was kicked.", `/ban` -> "The player was
+banned.", `/unban` -> "The player was unbanned.", `/save` -> "Successfully
+saved the world.", `/shutdown` -> "The server will shutdown.", `/stop` ->
+"The server force stopped."). An empty, JSON or otherwise divergent body, or
+a non-`text/plain` content type, is treated as an error (the content-type
+check runs before the body check so a 200 error page with an empty body is
+still detected, never reported as success). The internally
 created client never follows HTTP redirects (3xx responses surface as errors);
 if you inject a client via `WithHTTPClient`, its redirect policy applies.
 

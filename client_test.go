@@ -405,7 +405,7 @@ func TestClient_NullBodyResponse(t *testing.T) {
 	}
 }
 
-func TestClient_PostAcceptsEmptyResponse(t *testing.T) {
+func TestClient_Post_RejectsEmptyBody(t *testing.T) {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/v1/api/save", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
@@ -419,15 +419,15 @@ func TestClient_PostAcceptsEmptyResponse(t *testing.T) {
 		t.Fatalf("error creating client: %v", err)
 	}
 
-	if err := client.SaveServerState(context.Background()); err != nil {
-		t.Fatalf("SaveServerState failed: %v", err)
+	if err := client.SaveServerState(context.Background()); err == nil {
+		t.Fatal("expected error for empty POST success body")
 	}
 }
 
-func TestClient_Post_AcceptsWhitespaceBody(t *testing.T) {
+func TestClient_Post_RejectsWhitespaceBody(t *testing.T) {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/v1/api/save", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "text/plain")
 		_, _ = w.Write([]byte("\n  \t\n"))
 	})
 	srv := httptest.NewServer(handler)
@@ -438,8 +438,8 @@ func TestClient_Post_AcceptsWhitespaceBody(t *testing.T) {
 		t.Fatalf("error creating client: %v", err)
 	}
 
-	if err := client.SaveServerState(context.Background()); err != nil {
-		t.Fatalf("SaveServerState failed: %v", err)
+	if err := client.SaveServerState(context.Background()); err == nil {
+		t.Fatal("expected error for whitespace-only POST success body")
 	}
 }
 
@@ -505,14 +505,11 @@ func TestClient_Post_RejectsNonJSONBody(t *testing.T) {
 
 	err = client.StopServer(context.Background())
 	if err == nil {
-		t.Fatal("expected error for non-JSON success body")
-	}
-	if !strings.Contains(err.Error(), "not valid JSON") {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatal("expected error for non-matching success body")
 	}
 }
 
-func TestClient_Post_AcceptsJSONSuccess(t *testing.T) {
+func TestClient_Post_RejectsJSONBody(t *testing.T) {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/v1/api/announce", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -526,8 +523,8 @@ func TestClient_Post_AcceptsJSONSuccess(t *testing.T) {
 		t.Fatalf("error creating client: %v", err)
 	}
 
-	if err := client.MakeAnnouncement(context.Background(), "hello"); err != nil {
-		t.Fatalf("MakeAnnouncement failed: %v", err)
+	if err := client.MakeAnnouncement(context.Background(), "hello"); err == nil {
+		t.Fatal("expected error for JSON POST success body")
 	}
 }
 
@@ -535,7 +532,7 @@ func TestClient_Post_AcceptsTextPlainResponse(t *testing.T) {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/v1/api/announce", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain;charset=utf-8")
-		_, _ = w.Write([]byte("OK"))
+		_, _ = w.Write([]byte(announceSuccessText + "\n"))
 	})
 	srv := httptest.NewServer(handler)
 	defer srv.Close()
@@ -546,7 +543,116 @@ func TestClient_Post_AcceptsTextPlainResponse(t *testing.T) {
 	}
 
 	if err := client.MakeAnnouncement(context.Background(), "hello"); err != nil {
-		t.Fatalf("MakeAnnouncement should accept text/plain: %v", err)
+		t.Fatalf("MakeAnnouncement should accept the documented text/plain response: %v", err)
+	}
+}
+
+func TestClient_Post_RejectsWrongPlainTextBody(t *testing.T) {
+	handler := http.NewServeMux()
+	handler.HandleFunc("/v1/api/stop", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("ok"))
+	})
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	client, err := NewClient(srv.URL, "secret")
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	err = client.StopServer(context.Background())
+	if err == nil {
+		t.Fatal("expected error for non-matching plain text body")
+	}
+	if !strings.Contains(err.Error(), "unexpected response body") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestClient_Post_RejectsDivergentPlainText(t *testing.T) {
+	tests := []struct {
+		name   string
+		path   string
+		body   string
+		action func(ctx context.Context, c *Client) error
+	}{
+		{
+			name: "wrong text",
+			path: "/v1/api/announce",
+			body: "Wrong message.",
+			action: func(ctx context.Context, c *Client) error {
+				return c.MakeAnnouncement(ctx, "hello")
+			},
+		},
+		{
+			name: "another endpoint's text",
+			path: "/v1/api/shutdown",
+			body: announceSuccessText,
+			action: func(ctx context.Context, c *Client) error {
+				return c.ShutdownServer(ctx, 5, "bye")
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := http.NewServeMux()
+			handler.HandleFunc(tt.path, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "text/plain")
+				_, _ = w.Write([]byte(tt.body))
+			})
+			srv := httptest.NewServer(handler)
+			defer srv.Close()
+
+			client, err := NewClient(srv.URL, "secret")
+			if err != nil {
+				t.Fatalf("error creating client: %v", err)
+			}
+			if err := tt.action(context.Background(), client); err == nil {
+				t.Fatal("expected error for non-matching plain text body")
+			}
+		})
+	}
+}
+
+func TestClient_Post_RejectsJSONContentTypeWithDocumentedText(t *testing.T) {
+	handler := http.NewServeMux()
+	handler.HandleFunc("/v1/api/save", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(saveSuccessText))
+	})
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	client, err := NewClient(srv.URL, "secret")
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	err = client.SaveServerState(context.Background())
+	if err == nil {
+		t.Fatal("expected error for JSON content-type even with the documented text")
+	}
+	if !strings.Contains(err.Error(), `unexpected content-type "application/json"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestClient_Post_AcceptsDocumentedTextWithoutContentType(t *testing.T) {
+	handler := http.NewServeMux()
+	handler.HandleFunc("/v1/api/stop", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(stopSuccessText))
+	})
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	client, err := NewClient(srv.URL, "secret")
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	if err := client.StopServer(context.Background()); err != nil {
+		t.Fatalf("StopServer should accept the documented text without a content-type: %v", err)
 	}
 }
 
@@ -1123,6 +1229,7 @@ func TestClient_WriteEndpoints_TrimsValues(t *testing.T) {
 			mu.Lock()
 			payloads[r.URL.Path] = string(bytes)
 			mu.Unlock()
+			_, _ = w.Write([]byte(postSuccessTexts[r.URL.Path]))
 		})
 	}
 	srv := httptest.NewServer(handler)
@@ -1172,6 +1279,7 @@ func TestClient_ShutdownServer_ZeroWaitTimeAllowed(t *testing.T) {
 		mu.Lock()
 		payload = string(bytes)
 		mu.Unlock()
+		_, _ = w.Write([]byte(shutdownSuccessText))
 	})
 	srv := httptest.NewServer(handler)
 	defer srv.Close()
@@ -1306,6 +1414,18 @@ type writeEndpointCall struct {
 	body   string
 }
 
+// postSuccessTexts maps each POST endpoint path to its documented plain-text
+// success confirmation.
+var postSuccessTexts = map[string]string{
+	"/v1/api/announce": announceSuccessText,
+	"/v1/api/kick":     kickSuccessText,
+	"/v1/api/ban":      banSuccessText,
+	"/v1/api/unban":    unbanSuccessText,
+	"/v1/api/save":     saveSuccessText,
+	"/v1/api/shutdown": shutdownSuccessText,
+	"/v1/api/stop":     stopSuccessText,
+}
+
 func TestClient_WriteEndpoints(t *testing.T) {
 	paths := []string{
 		"/v1/api/announce",
@@ -1331,7 +1451,7 @@ func TestClient_WriteEndpoints(t *testing.T) {
 			calls = append(calls, writeEndpointCall{path: r.URL.Path, method: r.Method, body: body})
 			mu.Unlock()
 			w.Header().Set("Content-Type", "text/plain;charset=utf-8")
-			_, _ = w.Write([]byte("OK"))
+			_, _ = w.Write([]byte(postSuccessTexts[r.URL.Path]))
 		})
 	}
 
@@ -1456,6 +1576,7 @@ func TestClient_WriteEndpoints_OmitsEmptyMessage(t *testing.T) {
 			mu.Lock()
 			payloads[r.URL.Path] = string(bytes)
 			mu.Unlock()
+			_, _ = w.Write([]byte(postSuccessTexts[r.URL.Path]))
 		})
 	}
 

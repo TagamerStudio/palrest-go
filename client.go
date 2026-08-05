@@ -37,10 +37,22 @@ const (
 	drainLimitBytes   = 64 << 10
 
 	// postResponseLimitBytes caps success response bodies of POST endpoints;
-	// they are validated as empty or JSON and never need the general cap.
+	// they are validated against the documented plain-text confirmation and
+	// never need the general cap.
 	postResponseLimitBytes = 4 << 10
 
 	userAgent = "palrest-go"
+)
+
+// Documented plain-text success confirmations of the POST endpoints.
+const (
+	announceSuccessText = "The message was announced."
+	kickSuccessText     = "The player was kicked."
+	banSuccessText      = "The player was banned."
+	unbanSuccessText    = "The player was unbanned."
+	saveSuccessText     = "Successfully saved the world."
+	shutdownSuccessText = "The server will shutdown."
+	stopSuccessText     = "The server force stopped."
 )
 
 // Option is a configuration function applied to the Client.
@@ -456,27 +468,21 @@ func (c *Client) getInto(ctx context.Context, path string, out any, maxBytes int
 }
 
 // post performs an HTTP POST and validates the success response. Success
-// bodies must be empty, JSON, or plain text. A non-JSON/non-text body or a
-// mismatched content type indicates a misbehaving proxy or an error page
+// bodies must be exactly the documented plain-text confirmation for the
+// endpoint (expectedText). An empty, JSON or otherwise divergent body, or a
+// non-text content type, indicates a misbehaving proxy or an error page
 // served with status 200 and is treated as a failure. Bodies are capped at
 // postResponseLimitBytes.
-func (c *Client) post(ctx context.Context, path string, body any) error {
+func (c *Client) post(ctx context.Context, path string, body any, expectedText string) error {
 	bodyBytes, contentType, err := c.request(ctx, http.MethodPost, path, body, postResponseLimitBytes)
 	if err != nil {
 		return err
 	}
-	trimmed := bytes.TrimSpace(bodyBytes)
-	if strings.HasPrefix(contentType, "text/plain") {
-		return nil
-	}
-	if contentType != "" && !strings.HasPrefix(contentType, "application/json") {
+	if contentType != "" && !strings.HasPrefix(contentType, "text/plain") {
 		return fmt.Errorf("POST %s: unexpected content-type %q", path, contentType)
 	}
-	if len(trimmed) == 0 {
-		return nil
-	}
-	if !json.Valid(trimmed) {
-		return fmt.Errorf("POST %s: response body is not valid JSON", path)
+	if trimmed := strings.TrimSpace(string(bodyBytes)); trimmed != expectedText {
+		return fmt.Errorf("POST %s: unexpected response body %q, want %q", path, trimmed, expectedText)
 	}
 	return nil
 }
@@ -543,17 +549,17 @@ func (c *Client) MakeAnnouncement(ctx context.Context, message string) error {
 	if err != nil {
 		return err
 	}
-	return c.post(ctx, "/announce", map[string]string{"message": message})
+	return c.post(ctx, "/announce", map[string]string{"message": message}, announceSuccessText)
 }
 
 // KickPlayer kicks a player from the server by user ID with a message.
 func (c *Client) KickPlayer(ctx context.Context, userID, message string) error {
-	return c.playerAction(ctx, "/kick", userID, message)
+	return c.playerAction(ctx, "/kick", userID, message, kickSuccessText)
 }
 
 // BanPlayer bans a player from the server by user ID with a message.
 func (c *Client) BanPlayer(ctx context.Context, userID, message string) error {
-	return c.playerAction(ctx, "/ban", userID, message)
+	return c.playerAction(ctx, "/ban", userID, message, banSuccessText)
 }
 
 // UnbanPlayer unbans a player by user ID.
@@ -562,12 +568,12 @@ func (c *Client) UnbanPlayer(ctx context.Context, userID string) error {
 	if err != nil {
 		return err
 	}
-	return c.post(ctx, "/unban", map[string]string{"userid": userID})
+	return c.post(ctx, "/unban", map[string]string{"userid": userID}, unbanSuccessText)
 }
 
 // SaveServerState saves the current world state on the server.
 func (c *Client) SaveServerState(ctx context.Context) error {
-	return c.post(ctx, "/save", nil)
+	return c.post(ctx, "/save", nil, saveSuccessText)
 }
 
 // ShutdownServer shuts down the server after waitTime seconds with a message.
@@ -582,16 +588,16 @@ func (c *Client) ShutdownServer(ctx context.Context, waitTime int, message strin
 	if message != "" {
 		payload["message"] = message
 	}
-	return c.post(ctx, "/shutdown", payload)
+	return c.post(ctx, "/shutdown", payload, shutdownSuccessText)
 }
 
 // playerAction kicks or bans a player by user ID, sending an optional message.
-func (c *Client) playerAction(ctx context.Context, path, userID, message string) error {
+func (c *Client) playerAction(ctx context.Context, path, userID, message, expectedText string) error {
 	userID, err := requiredTrimmed(userID, "userid")
 	if err != nil {
 		return err
 	}
-	return c.post(ctx, path, playerPayload(userID, strings.TrimSpace(message)))
+	return c.post(ctx, path, playerPayload(userID, strings.TrimSpace(message)), expectedText)
 }
 
 // playerPayload builds a kick/ban payload, omitting the optional message
@@ -616,5 +622,5 @@ func requiredTrimmed(value, name string) (string, error) {
 
 // StopServer stops the server immediately.
 func (c *Client) StopServer(ctx context.Context) error {
-	return c.post(ctx, "/stop", nil)
+	return c.post(ctx, "/stop", nil, stopSuccessText)
 }
