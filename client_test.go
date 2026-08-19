@@ -854,6 +854,9 @@ func TestClient_ReadEndpoints(t *testing.T) {
 func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 	raw := `{
 		"Difficulty": "Normal",
+		"RandomizerType": "None",
+		"RandomizerSeed": "",
+		"bIsRandomizerPalLevelRandom": false,
 		"DayTimeSpeedRate": 1.0,
 		"NightTimeSpeedRate": 1.0,
 		"ExpRate": 1.0,
@@ -871,6 +874,7 @@ func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 		"PalStaminaDecreaceRate": 1.0,
 		"PalAutoHPRegeneRate": 1.0,
 		"PalAutoHpRegeneRateInSleep": 1.0,
+		"BuildObjectHpRate": 10,
 		"BuildObjectDamageRate": 1.0,
 		"BuildObjectDeteriorationDamageRate": 1.0,
 		"CollectionDropRate": 1.0,
@@ -885,6 +889,7 @@ func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 		"bEnableAimAssistPad": true,
 		"bEnableAimAssistKeyboard": true,
 		"DropItemMaxNum": 3000,
+		"PhysicsActiveDropItemMaxNum": -1,
 		"DropItemMaxNum_UNKO": 100,
 		"BaseCampMaxNum": 128,
 		"BaseCampWorkerMaxNum": 15,
@@ -892,20 +897,30 @@ func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 		"bAutoResetGuildNoOnlinePlayers": false,
 		"AutoResetGuildTimeNoOnlinePlayers": 72.0,
 		"GuildPlayerMaxNum": 20,
+		"BaseCampMaxNumInGuild": 3,
 		"PalEggDefaultHatchingTime": 72.0,
 		"WorkSpeedRate": 1.0,
+		"autoSaveSpan": 60,
 		"bIsMultiplay": true,
 		"bIsPvP": false,
+		"bHardcore": false,
+		"bPalLost": false,
+		"bCharacterRecreateInHardcore": false,
 		"bCanPickupOtherGuildDeathPenaltyDrop": false,
 		"bEnableNonLoginPenalty": true,
 		"bEnableFastTravel": true,
+		"bEnableFastTravelOnlyBaseCamp": false,
 		"bIsStartLocationSelectByMap": true,
 		"bExistPlayerAfterLogout": false,
 		"bEnableDefenseOtherGuildPlayer": false,
+		"bInvisibleOtherGuildBaseCampAreaFX": true,
+		"bBuildAreaLimit": true,
+		"ItemWeightRate": 0.5,
 		"CoopPlayerMaxNum": 4,
 		"ServerPlayerMaxNum": 32,
 		"ServerName": "Test Server",
 		"ServerDescription": "desc",
+		"bAllowClientMod": false,
 		"PublicPort": 8211,
 		"PublicIP": "127.0.0.1",
 		"RCONEnabled": true,
@@ -916,9 +931,47 @@ func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 		"RESTAPIEnabled": true,
 		"RESTAPIPort": 8212,
 		"bShowPlayerList": true,
-		"AllowConnectPlatform": "Steam",
+		"ChatPostLimitPerMinute": 30,
+		"CrossplayPlatforms": ["Steam", "Xbox", "PS5", "Mac"],
 		"bIsUseBackupSaveData": true,
-		"LogFormatType": "Text"
+		"LogFormatType": "Text",
+		"bIsShowJoinLeftMessage": true,
+		"SupplyDropSpan": 18,
+		"EnablePredatorBossPal": true,
+		"MaxBuildingLimitNum": 2000,
+		"ServerReplicatePawnCullDistance": 10000,
+		"bAllowGlobalPalboxExport": true,
+		"bAllowGlobalPalboxImport": false,
+		"EquipmentDurabilityDamageRate": 1.0,
+		"ItemContainerForceMarkDirtyInterval": 1.0,
+		"PlayerDataPalStorageUpdateCheckTickInterval": 1.0,
+		"ItemCorruptionMultiplier": 0.5,
+		"MonsterFarmActionSpeedRate": 1.0,
+		"DenyTechnologyList": [],
+		"GuildRejoinCooldownMinutes": 0,
+		"AutoTransferMasterCheckIntervalSeconds": 3600,
+		"AutoTransferMasterThresholdDays": 14,
+		"MaxGuildsPerFrame": 10,
+		"BlockRespawnTime": 5,
+		"RespawnPenaltyDurationThreshold": 0,
+		"RespawnPenaltyTimeScale": 2,
+		"bDisplayPvPItemNumOnWorldMap_BaseCamp": false,
+		"bDisplayPvPItemNumOnWorldMap_Player": false,
+		"AdditionalDropItemWhenPlayerKillingInPvPMode": "PlayerDropItem",
+		"AdditionalDropItemNumWhenPlayerKillingInPvPMode": 1,
+		"bAdditionalDropItemWhenPlayerKillingInPvPMode": false,
+		"bEnableVoiceChat": false,
+		"VoiceChatMaxVolumeDistance": 3000,
+		"VoiceChatZeroVolumeDistance": 15000,
+		"bAllowEnhanceStat_Health": true,
+		"bAllowEnhanceStat_Attack": true,
+		"bAllowEnhanceStat_Stamina": true,
+		"bAllowEnhanceStat_Weight": true,
+		"bAllowEnhanceStat_WorkSpeed": true,
+		"bEnableBuildingPlayerUIdDisplay": false,
+		"BuildingNameDisplayCacheTTLSeconds": 60,
+		"bAllowEnemyCampSpawnNearBaseCamp": false,
+		"AllowConnectPlatform": "Steam"
 	}`
 
 	handler := http.NewServeMux()
@@ -943,6 +996,12 @@ func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 	if settings.Difficulty != "Normal" || settings.DeathPenalty != "None" ||
 		settings.DropItemMaxNumUNKO != 100 || settings.BaseCampMaxNum != 128 ||
 		settings.ServerPlayerMaxNum != 32 || settings.RCONPort != 25575 ||
+		settings.BaseCampMaxNumInGuild != 3 || settings.BuildObjectHpRate != 10 ||
+		settings.ItemWeightRate != 0.5 || settings.AutoSaveSpan != 60 ||
+		settings.MaxBuildingLimitNum != 2000 || settings.SupplyDropSpan != 18 ||
+		settings.AllowGlobalPalboxExport != true || !settings.EnablePredatorBossPal ||
+		len(settings.CrossplayPlatforms) != 4 ||
+		!settings.AllowEnhanceStat_Health || settings.AllowEnemyCampSpawnNearBaseCamp ||
 		!settings.IsUseBackupSaveData || !settings.RESTAPIEnabled ||
 		settings.AllowConnectPlatform != "Steam" {
 		t.Fatalf("unexpected settings: %+v", settings)
