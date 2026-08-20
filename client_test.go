@@ -236,6 +236,30 @@ func TestNewClient_MaxLengthFQDN(t *testing.T) {
 	}
 }
 
+func TestNewClient_LabelLongerThan63CharsRejected(t *testing.T) {
+	if _, err := NewClient(strings.Repeat("a", 64)+".com:17999", "secret"); err == nil {
+		t.Fatal("expected error for a DNS label longer than 63 characters")
+	}
+}
+
+func TestNewClient_PortWithLeadingDigitAtoiError(t *testing.T) {
+	if _, err := NewClient("http://127.0.0.1:12x", "secret"); err == nil {
+		t.Fatal("expected error for a non-numeric port starting with a digit")
+	}
+}
+
+func TestNewClient_RequiresBaseURL(t *testing.T) {
+	for _, raw := range []string{"", "   "} {
+		_, err := NewClient(raw, "secret")
+		if err == nil {
+			t.Fatalf("expected error for base URL %q", raw)
+		}
+		if !strings.Contains(err.Error(), "base URL is required") {
+			t.Fatalf("unexpected error for base URL %q: %v", raw, err)
+		}
+	}
+}
+
 func TestNewClient_LeadingZeroPort(t *testing.T) {
 	client, err := NewClient("127.0.0.1:08212", "secret")
 	if err != nil {
