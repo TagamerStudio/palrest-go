@@ -88,7 +88,18 @@ disables TLS certificate verification.
 ## Errors
 
 HTTP errors are returned as `*APIError` with `StatusCode`, `Method`, `Path`
-and `ResponseBody`. The official API documents `200`/`400`/`401` for most
+and `ResponseBody`:
+
+```go
+_, err := client.GetServerMetrics(ctx)
+var apiErr *palrest.APIError
+if errors.As(err, &apiErr) {
+    // apiErr.StatusCode, apiErr.Method, apiErr.Path,
+    // apiErr.ResponseBody (decoded JSON or raw text, for logging)
+}
+```
+
+The official API documents `200`/`400`/`401` for most
 endpoints (`/game-data` documents only `200`/`401`); error bodies are
 undocumented and may vary between versions, and are capped at 1 KiB for
 logging. GET responses with an empty or JSON-`null` body are treated as
