@@ -853,7 +853,7 @@ func TestClient_ReadEndpoints(t *testing.T) {
 // rejects any field the client schema does not cover.
 func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 	raw := `{
-		"Difficulty": "Normal",
+		"Difficulty": "None",
 		"RandomizerType": "None",
 		"RandomizerSeed": "",
 		"bIsRandomizerPalLevelRandom": false,
@@ -874,20 +874,20 @@ func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 		"PalStaminaDecreaceRate": 1.0,
 		"PalAutoHPRegeneRate": 1.0,
 		"PalAutoHpRegeneRateInSleep": 1.0,
-		"BuildObjectHpRate": 10,
+		"BuildObjectHpRate": 1.0,
 		"BuildObjectDamageRate": 1.0,
 		"BuildObjectDeteriorationDamageRate": 1.0,
 		"CollectionDropRate": 1.0,
 		"CollectionObjectHpRate": 1.0,
 		"CollectionObjectRespawnSpeedRate": 1.0,
 		"EnemyDropItemRate": 1.0,
-		"DeathPenalty": "None",
-		"bEnablePlayerToPlayerDamage": true,
-		"bEnableFriendlyFire": true,
+		"DeathPenalty": "Item",
+		"bEnablePlayerToPlayerDamage": false,
+		"bEnableFriendlyFire": false,
 		"bEnableInvaderEnemy": true,
-		"bActiveUNKO": true,
+		"bActiveUNKO": false,
 		"bEnableAimAssistPad": true,
-		"bEnableAimAssistKeyboard": true,
+		"bEnableAimAssistKeyboard": false,
 		"DropItemMaxNum": 3000,
 		"PhysicsActiveDropItemMaxNum": -1,
 		"DropItemMaxNum_UNKO": 100,
@@ -897,11 +897,11 @@ func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 		"bAutoResetGuildNoOnlinePlayers": false,
 		"AutoResetGuildTimeNoOnlinePlayers": 72.0,
 		"GuildPlayerMaxNum": 20,
-		"BaseCampMaxNumInGuild": 3,
-		"PalEggDefaultHatchingTime": 72.0,
+		"BaseCampMaxNumInGuild": 4,
+		"PalEggDefaultHatchingTime": 1.0,
 		"WorkSpeedRate": 1.0,
-		"autoSaveSpan": 60,
-		"bIsMultiplay": true,
+		"autoSaveSpan": 30,
+		"bIsMultiplay": false,
 		"bIsPvP": false,
 		"bHardcore": false,
 		"bPalLost": false,
@@ -910,42 +910,42 @@ func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 		"bEnableNonLoginPenalty": true,
 		"bEnableFastTravel": true,
 		"bEnableFastTravelOnlyBaseCamp": false,
-		"bIsStartLocationSelectByMap": true,
+		"bIsStartLocationSelectByMap": false,
 		"bExistPlayerAfterLogout": false,
 		"bEnableDefenseOtherGuildPlayer": false,
-		"bInvisibleOtherGuildBaseCampAreaFX": true,
-		"bBuildAreaLimit": true,
-		"ItemWeightRate": 0.5,
+		"bInvisibleOtherGuildBaseCampAreaFX": false,
+		"bBuildAreaLimit": false,
+		"ItemWeightRate": 1.0,
 		"CoopPlayerMaxNum": 4,
 		"ServerPlayerMaxNum": 32,
-		"ServerName": "Test Server",
-		"ServerDescription": "desc",
-		"bAllowClientMod": false,
+		"ServerName": "Default Palworld Server",
+		"ServerDescription": "",
+		"bAllowClientMod": true,
 		"PublicPort": 8211,
-		"PublicIP": "127.0.0.1",
-		"RCONEnabled": true,
+		"PublicIP": "",
+		"RCONEnabled": false,
 		"RCONPort": 25575,
-		"Region": "en",
+		"Region": "",
 		"bUseAuth": true,
-		"BanListURL": "https://api.palworldgame.com/api/banlist",
-		"RESTAPIEnabled": true,
+		"BanListURL": "https://b.palworldgame.com/api/banlist.txt",
+		"RESTAPIEnabled": false,
 		"RESTAPIPort": 8212,
-		"bShowPlayerList": true,
+		"bShowPlayerList": false,
 		"ChatPostLimitPerMinute": 30,
 		"CrossplayPlatforms": ["Steam", "Xbox", "PS5", "Mac"],
 		"bIsUseBackupSaveData": true,
 		"LogFormatType": "Text",
 		"bIsShowJoinLeftMessage": true,
-		"SupplyDropSpan": 18,
+		"SupplyDropSpan": 180,
 		"EnablePredatorBossPal": true,
-		"MaxBuildingLimitNum": 2000,
-		"ServerReplicatePawnCullDistance": 10000,
+		"MaxBuildingLimitNum": 0,
+		"ServerReplicatePawnCullDistance": 15000,
 		"bAllowGlobalPalboxExport": true,
 		"bAllowGlobalPalboxImport": false,
 		"EquipmentDurabilityDamageRate": 1.0,
 		"ItemContainerForceMarkDirtyInterval": 1.0,
 		"PlayerDataPalStorageUpdateCheckTickInterval": 1.0,
-		"ItemCorruptionMultiplier": 0.5,
+		"ItemCorruptionMultiplier": 1.0,
 		"MonsterFarmActionSpeedRate": 1.0,
 		"DenyTechnologyList": [],
 		"GuildRejoinCooldownMinutes": 0,
@@ -993,17 +993,19 @@ func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 
 	decodeStrict(t, raw, &ServerSettings{})
 
-	if settings.Difficulty != "Normal" || settings.DeathPenalty != "None" ||
-		settings.DropItemMaxNumUNKO != 100 || settings.BaseCampMaxNum != 128 ||
-		settings.ServerPlayerMaxNum != 32 || settings.RCONPort != 25575 ||
-		settings.BaseCampMaxNumInGuild != 3 || settings.BuildObjectHpRate != 10 ||
-		settings.ItemWeightRate != 0.5 || settings.AutoSaveSpan != 60 ||
-		settings.MaxBuildingLimitNum != 2000 || settings.SupplyDropSpan != 18 ||
-		settings.AllowGlobalPalboxExport != true || !settings.EnablePredatorBossPal ||
-		len(settings.CrossplayPlatforms) != 4 ||
+	if settings.Difficulty != "None" || settings.DeathPenalty != "Item" ||
+		settings.PalEggDefaultHatchingTime != 1.0 || settings.BaseCampMaxNumInGuild != 4 ||
+		settings.BuildObjectHpRate != 1.0 || settings.ItemWeightRate != 1.0 ||
+		settings.AutoSaveSpan != 30 || settings.ServerName != "Default Palworld Server" ||
+		settings.ServerDescription != "" || settings.PublicIP != "" || settings.Region != "" ||
+		settings.BanListURL != "https://b.palworldgame.com/api/banlist.txt" ||
+		settings.RESTAPIEnabled || settings.RCONEnabled || settings.ShowPlayerList || settings.IsMultiplay ||
+		!settings.AllowClientMod || settings.MaxBuildingLimitNum != 0 ||
+		settings.SupplyDropSpan != 180 || settings.ServerReplicatePawnCullDistance != 15000 ||
+		settings.ItemCorruptionMultiplier != 1.0 || !settings.AllowGlobalPalboxExport ||
+		!settings.EnablePredatorBossPal || len(settings.CrossplayPlatforms) != 4 ||
 		!settings.AllowEnhanceStat_Health || settings.AllowEnemyCampSpawnNearBaseCamp ||
-		!settings.IsUseBackupSaveData || !settings.RESTAPIEnabled ||
-		settings.AllowConnectPlatform != "Steam" {
+		!settings.IsUseBackupSaveData || settings.AllowConnectPlatform != "Steam" {
 		t.Fatalf("unexpected settings: %+v", settings)
 	}
 }
