@@ -547,6 +547,25 @@ func TestClient_Post_AcceptsTextPlainResponse(t *testing.T) {
 	}
 }
 
+func TestClient_Post_AcceptsUppercaseContentType(t *testing.T) {
+	handler := http.NewServeMux()
+	handler.HandleFunc("/v1/api/announce", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "Text/Plain; charset=UTF-8")
+		_, _ = w.Write([]byte(announceSuccessText))
+	})
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	client, err := NewClient(srv.URL, "secret")
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	if err := client.MakeAnnouncement(context.Background(), "hello"); err != nil {
+		t.Fatalf("MakeAnnouncement should accept case-insensitive text/plain content types: %v", err)
+	}
+}
+
 func TestClient_Post_RejectsWrongPlainTextBody(t *testing.T) {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/v1/api/stop", func(w http.ResponseWriter, r *http.Request) {

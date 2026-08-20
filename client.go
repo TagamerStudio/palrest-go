@@ -478,7 +478,7 @@ func (c *Client) post(ctx context.Context, path string, body any, expectedText s
 	if err != nil {
 		return err
 	}
-	if contentType != "" && !strings.HasPrefix(contentType, "text/plain") {
+	if contentType != "" && !strings.HasPrefix(strings.ToLower(contentType), "text/plain") {
 		return fmt.Errorf("POST %s: unexpected content-type %q", path, contentType)
 	}
 	if trimmed := strings.TrimSpace(string(bodyBytes)); trimmed != expectedText {
