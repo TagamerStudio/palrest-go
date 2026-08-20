@@ -45,6 +45,33 @@ func TestActor_UnmarshalJSON_EmptyTypeRejected(t *testing.T) {
 	}
 }
 
+func TestActor_UnmarshalJSON_NonObjectRejected(t *testing.T) {
+	var actor Actor
+
+	dec := json.NewDecoder(strings.NewReader(`123`))
+	if err := dec.Decode(&actor); err == nil {
+		t.Fatal("expected error for a non-object actor payload")
+	}
+}
+
+func TestActor_UnmarshalJSON_CharacterDecodeError(t *testing.T) {
+	var actor Actor
+
+	dec := json.NewDecoder(strings.NewReader(`{"Type":"Character","HP":"abc"}`))
+	if err := dec.Decode(&actor); err == nil {
+		t.Fatal("expected error for a character actor with a wrong field type")
+	}
+}
+
+func TestActor_UnmarshalJSON_PalBoxDecodeError(t *testing.T) {
+	var actor Actor
+
+	dec := json.NewDecoder(strings.NewReader(`{"Type":"PalBox","GuildID":123}`))
+	if err := dec.Decode(&actor); err == nil {
+		t.Fatal("expected error for a pal box actor with a wrong field type")
+	}
+}
+
 func TestActor_UnmarshalJSON_NullResetsState(t *testing.T) {
 	actor := Actor{}
 

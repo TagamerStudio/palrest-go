@@ -1948,3 +1948,144 @@ func (t *trackingTransport) RoundTrip(*http.Request) (*http.Response, error) {
 func (t *trackingTransport) CloseIdleConnections() {
 	t.closed = true
 }
+
+// faultyReadCloser is an io.ReadCloser whose Read always returns the
+// configured error, used to exercise the response-read error branches.
+type faultyReadCloser struct {
+	err error
+}
+
+func (f faultyReadCloser) Read([]byte) (int, error) {
+	return 0, f.err
+}
+
+func (f faultyReadCloser) Close() error {
+	return nil
+}
+
+// faultInjectionTransport returns a canned response for every request,
+// optionally with a body that fails on Read or without a Content-Type.
+type faultInjectionTransport struct {
+	statusCode int
+	body       io.ReadCloser
+	readErr    error
+	header     http.Header
+}
+
+func (t faultInjectionTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	body := t.body
+	if body == nil {
+		body = faultyReadCloser{err: t.readErr}
+	}
+	header := t.header
+	if header == nil {
+		header = make(http.Header)
+	}
+	return &http.Response{StatusCode: t.statusCode, Body: body, Header: header, Request: req}, nil
+}
+
+func TestClient_ReadErrorOnErrorResponse(t *testing.T) {
+	client, err := NewClient("127.0.0.1:17999", "secret", WithHTTPClient(&http.Client{
+		Transport: faultInjectionTransport{statusCode: http.StatusInternalServerError, readErr: errors.New("read failed")},
+	}))
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	_, err = client.GetServerMetrics(context.Background())
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "failed to read error response body") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestClient_ReadErrorOnSuccessResponse(t *testing.T) {
+	client, err := NewClient("127.0.0.1:17999", "secret", WithHTTPClient(&http.Client{
+		Transport: faultInjectionTransport{statusCode: http.StatusOK, readErr: errors.New("read failed")},
+	}))
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	_, err = client.GetServerInfo(context.Background())
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "failed to read response body") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestClient_DecodeFailureWithoutContentType(t *testing.T) {
+	client, err := NewClient("127.0.0.1:17999", "secret", WithHTTPClient(&http.Client{
+		Transport: faultInjectionTransport{
+			statusCode: http.StatusOK,
+			body:       io.NopCloser(strings.NewReader("not-json")),
+		},
+	}))
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	_, err = client.GetServerInfo(context.Background())
+	if err == nil {
+		t.Fatal("expected decode error")
+	}
+	if !strings.Contains(err.Error(), `content-type "unknown"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestClient_APIError_ErrorString(t *testing.T) {
+	client, err := NewClient("127.0.0.1:17999", "secret", WithHTTPClient(&http.Client{
+		Transport: faultInjectionTransport{
+			statusCode: http.StatusBadRequest,
+			body:       io.NopCloser(strings.NewReader(`{"error":"bad"}`)),
+		},
+	}))
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	_, err = client.GetServerMetrics(context.Background())
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("expected APIError, got: %v", err)
+	}
+	msg := apiErr.Error()
+	for _, want := range []string{"rest api error:", "status=400", "method=GET", "path=/metrics"} {
+		if !strings.Contains(msg, want) {
+			t.Fatalf("error string missing %q: %s", want, msg)
+		}
+	}
+}
+
+func TestClient_GetServerSettings_ErrorPath(t *testing.T) {
+	client, err := NewClient("127.0.0.1:17999", "secret", WithHTTPClient(&http.Client{
+		Transport: faultInjectionTransport{
+			statusCode: http.StatusInternalServerError,
+			body:       io.NopCloser(strings.NewReader(`{"error":"boom"}`)),
+		},
+	}))
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	if _, err := client.GetServerSettings(context.Background()); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestNewClient_ParseError(t *testing.T) {
+	if _, err := NewClient("http://ho st:8212", "secret"); err == nil {
+		t.Fatal("expected error for a base URL that fails to parse")
+	}
+}
+
+func TestNewClient_MissingHost(t *testing.T) {
+	if _, err := NewClient("http://", "secret"); err == nil {
+		t.Fatal("expected error for a base URL without a host")
+	}
+}
