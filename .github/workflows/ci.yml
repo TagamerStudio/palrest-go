@@ -32,3 +32,6 @@ jobs:
       - run: go test -count=1 -race -coverprofile=coverage.out ./...
       - name: Coverage summary
         run: echo '```' >> "$GITHUB_STEP_SUMMARY" && go tool cover -func=coverage.out >> "$GITHUB_STEP_SUMMARY" && echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - uses: codecov/codecov-action@v7
+        with:
+          files: coverage.out
