@@ -35,3 +35,12 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           files: coverage.out
+
+  govulncheck:
+    name: Vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - id: govulncheck
+        uses: golang/govulncheck-action@v1
+        with:
+          go-package: ./...
