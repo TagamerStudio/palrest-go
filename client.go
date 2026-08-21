@@ -132,8 +132,20 @@ type APIError struct {
 	ResponseBody any
 }
 
+// Error returns a safe summary of the HTTP error. ResponseBody remains
+// available for callers that explicitly need to inspect or log it.
 func (e *APIError) Error() string {
-	return fmt.Sprintf("rest api error: status=%d method=%s path=%s body=%v", e.StatusCode, e.Method, e.Path, e.ResponseBody)
+	return fmt.Sprintf("rest api error: status=%d method=%s path=%s", e.StatusCode, e.Method, e.Path)
+}
+
+// Format writes a redacted representation of the client without its password
+// or internal HTTP client.
+func (c *Client) Format(state fmt.State, verb rune) {
+	if c == nil {
+		_, _ = io.WriteString(state, "<nil>")
+		return
+	}
+	_, _ = fmt.Fprintf(state, "palrest.Client{baseURL:%q, timeout:%s, maxBodyBytes:%d, ownClient:%t}", c.baseURL, c.timeout, c.maxBodyBytes, c.ownClient)
 }
 
 // NewClient creates a REST client with a normalized base URL and optional
@@ -221,18 +233,18 @@ func normalizeBaseURL(raw, defaultPort string) (string, error) {
 	}
 
 	if u.Path != "" && u.Path != "/" {
-		return "", fmt.Errorf("base URL must not contain a path: %q", raw)
+		return "", fmt.Errorf("base URL must not contain a path: %q", redactUserinfo(raw))
 	}
 	if u.RawQuery != "" {
-		return "", fmt.Errorf("base URL must not contain a query string: %q", raw)
+		return "", fmt.Errorf("base URL must not contain a query string: %q", redactUserinfo(raw))
 	}
 	if u.Fragment != "" {
-		return "", fmt.Errorf("base URL must not contain a fragment: %q", raw)
+		return "", fmt.Errorf("base URL must not contain a fragment: %q", redactUserinfo(raw))
 	}
 
 	host := u.Hostname()
 	if host == "" {
-		return "", fmt.Errorf("base URL missing host: %q", raw)
+		return "", fmt.Errorf("base URL missing host: %q", redactUserinfo(raw))
 	}
 	if !validHostname(host) {
 		return "", fmt.Errorf("invalid hostname %q in base URL", host)
@@ -356,18 +368,24 @@ func validLabelChar(r byte, labelLen int) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-'
 }
 
-// redactUserinfo masks credentials in raw so error messages referencing the
-// URL do not leak the password into logs.
+// redactUserinfo returns an authority-only URL representation with credentials
+// replaced by a marker so URL errors do not leak sensitive components.
 func redactUserinfo(raw string) string {
-	schemeEnd := strings.Index(raw, "://")
-	if schemeEnd < 0 {
-		return raw
+	u, err := url.Parse(raw)
+	if err != nil {
+		return "[invalid base URL]"
 	}
-	at := strings.LastIndexByte(raw[schemeEnd+3:], '@')
-	if at < 0 {
-		return raw
+	if u.Scheme == "" {
+		if u.Host == "" && u.RawQuery == "" && u.Fragment == "" {
+			return u.Path
+		}
+		return "[invalid base URL]"
 	}
-	return raw[:schemeEnd+3] + "xxxxx" + raw[schemeEnd+3+at:]
+	host := u.Host
+	if u.User != nil {
+		host = "xxxxx@" + host
+	}
+	return u.Scheme + "://" + host
 }
 
 // validatePort checks that port is a number within the valid TCP range and

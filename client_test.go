@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -152,6 +153,25 @@ func TestNewClient_RedactsUserinfoInErrors(t *testing.T) {
 		}
 		if !strings.Contains(err.Error(), "xxxxx") {
 			t.Fatalf("expected redacted userinfo in error message: %v", err)
+		}
+	}
+}
+
+func TestNewClient_RedactsURLComponentsInErrors(t *testing.T) {
+	for _, raw := range []string{
+		"http://example.com/path/secret",
+		"http://example.com?token=secret",
+		"http://example.com#secret",
+	} {
+		_, err := NewClient(raw, "password")
+		if err == nil {
+			t.Fatalf("expected error for base URL %q", raw)
+		}
+		if strings.Contains(err.Error(), "secret") {
+			t.Fatalf("sensitive URL component leaked in error: %v", err)
+		}
+		if !strings.Contains(err.Error(), "http://example.com") {
+			t.Fatalf("safe URL authority missing from error: %v", err)
 		}
 	}
 }
@@ -2062,7 +2082,7 @@ func TestClient_APIError_ErrorString(t *testing.T) {
 	client, err := NewClient("127.0.0.1:17999", "secret", WithHTTPClient(&http.Client{
 		Transport: faultInjectionTransport{
 			statusCode: http.StatusBadRequest,
-			body:       io.NopCloser(strings.NewReader(`{"error":"bad"}`)),
+			body:       io.NopCloser(strings.NewReader("remote-secret\r\nforged")),
 		},
 	}))
 	if err != nil {
@@ -2078,6 +2098,30 @@ func TestClient_APIError_ErrorString(t *testing.T) {
 	for _, want := range []string{"rest api error:", "status=400", "method=GET", "path=/metrics"} {
 		if !strings.Contains(msg, want) {
 			t.Fatalf("error string missing %q: %s", want, msg)
+		}
+	}
+	if strings.Contains(msg, "remote-secret") || strings.Contains(msg, "forged") {
+		t.Fatalf("response body leaked in error string: %s", msg)
+	}
+}
+
+func TestClient_FormatRedactsPassword(t *testing.T) {
+	const password = "super-secret"
+	client, err := NewClient("127.0.0.1:17999", password)
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	for _, formatted := range []string{
+		fmt.Sprintf("%v", client),
+		fmt.Sprintf("%+v", client),
+		fmt.Sprintf("%#v", client),
+	} {
+		if strings.Contains(formatted, password) {
+			t.Fatalf("password leaked in client format: %s", formatted)
+		}
+		if !strings.Contains(formatted, "palrest.Client") {
+			t.Fatalf("unexpected client format: %s", formatted)
 		}
 	}
 }
