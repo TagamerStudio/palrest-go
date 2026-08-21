@@ -242,9 +242,10 @@ func TestNewClient_LabelLongerThan63CharsRejected(t *testing.T) {
 	}
 }
 
-func TestNewClient_PortWithLeadingDigitAtoiError(t *testing.T) {
-	if _, err := NewClient("http://127.0.0.1:12x", "secret"); err == nil {
-		t.Fatal("expected error for a non-numeric port starting with a digit")
+func TestNewClient_PortAtoiOverflow(t *testing.T) {
+	overflowing := "http://127.0.0.1:" + strings.Repeat("9", 26)
+	if _, err := NewClient(overflowing, "secret"); err == nil {
+		t.Fatal("expected error for an all-digit port that overflows strconv.Atoi")
 	}
 }
 
@@ -2087,5 +2088,64 @@ func TestNewClient_ParseError(t *testing.T) {
 func TestNewClient_MissingHost(t *testing.T) {
 	if _, err := NewClient("http://", "secret"); err == nil {
 		t.Fatal("expected error for a base URL without a host")
+	}
+}
+
+func TestRequest_MarshalError(t *testing.T) {
+	client, err := NewClient("127.0.0.1:17999", "secret")
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	_, _, err = client.request(context.Background(), http.MethodGet, "/info", make(chan int), 1024)
+	if err == nil {
+		t.Fatal("expected error for a body that cannot be marshaled")
+	}
+	if !strings.Contains(err.Error(), "failed to marshal request body") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestRequest_NewRequestError(t *testing.T) {
+	client, err := NewClient("127.0.0.1:17999", "secret")
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	_, _, err = client.request(context.Background(), "G ET", "/info", nil, 1024)
+	if err == nil {
+		t.Fatal("expected error for an invalid HTTP method")
+	}
+	if !strings.Contains(err.Error(), "failed to create HTTP request") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestBuildURL_AddsLeadingSlash(t *testing.T) {
+	client, err := NewClient("127.0.0.1:17999", "secret")
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	if got := client.buildURL("info"); got != "http://127.0.0.1:17999/v1/api/info" {
+		t.Fatalf("unexpected target: %s", got)
+	}
+}
+
+func TestNormalizeBaseURL_Empty(t *testing.T) {
+	if _, err := normalizeBaseURL("", defaultPort); err == nil {
+		t.Fatal("expected error for an empty base URL")
+	}
+}
+
+func TestRedactUserinfo_NoScheme(t *testing.T) {
+	if got := redactUserinfo("plain"); got != "plain" {
+		t.Fatalf("unexpected result: %s", got)
+	}
+}
+
+func TestValidatePort_Empty(t *testing.T) {
+	if _, err := validatePort(""); err == nil {
+		t.Fatal("expected error for an empty port")
 	}
 }
