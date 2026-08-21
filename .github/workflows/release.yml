@@ -8,21 +8,73 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  validate:
+    name: Validate release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: "1.25.14"
+          cache: true
+      - name: Validate tag and changelog
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REF_TYPE: ${{ github.ref_type }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
+            echo "release workflow must run from a tag" >&2
+            exit 1
+          fi
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "tag must be a stable semantic version in the form vMAJOR.MINOR.PATCH" >&2
+            exit 1
+          fi
+          tag_commit="$(git rev-list -n 1 "$GITHUB_REF_NAME")"
+          if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
+            echo "tag does not resolve to the workflow commit" >&2
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main; then
+            echo "tag commit is not contained in main" >&2
+            exit 1
+          fi
+          changelog_version="${GITHUB_REF_NAME#v}"
+          if ! grep -Eq "^## \[$changelog_version\]( |$)" CHANGELOG.md; then
+            echo "CHANGELOG.md has no section for $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9
+        with:
+          version: v2.12.2
+          github-token: ""
+          args: --config .golangci.yml --timeout 5m ./...
+      - run: go mod verify
+      - run: go vet ./...
+      - run: go test -count=1 -race ./...
+      - name: Run govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
+        env:
+          GOTOOLCHAIN: local
+
   release:
     name: Publish GitHub release
+    needs: validate
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
-        with:
-          go-version: "1.25"
-          cache: true
-      - run: go mod verify
-      - run: go vet ./...
-      - run: go test -count=1 -race ./...
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
