@@ -188,6 +188,25 @@ func TestNewClient_UnbracketedIPv6WithoutPortRejected(t *testing.T) {
 	}
 }
 
+func TestNewClient_UnbracketedIPv6WithZoneNormalized(t *testing.T) {
+	client, err := NewClient("fe80::1%eth0:2222", "secret")
+	if err != nil {
+		t.Fatalf("unexpected error creating client: %v", err)
+	}
+
+	if client.baseURL != "http://[fe80::1%25eth0]:2222" {
+		t.Fatalf("unexpected baseURL: %s", client.baseURL)
+	}
+}
+
+func TestNewClient_UnbracketedIPv6InvalidPortRejected(t *testing.T) {
+	for _, raw := range []string{"::1:0", "::1:65536", "::1:not-a-port"} {
+		if _, err := NewClient(raw, "secret"); err == nil {
+			t.Fatalf("expected error for base URL %q", raw)
+		}
+	}
+}
+
 func TestNewClient_TrimsWhitespaceBaseURL(t *testing.T) {
 	client, err := NewClient("  127.0.0.1:17999  ", "secret")
 	if err != nil {

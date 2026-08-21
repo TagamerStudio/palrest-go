@@ -203,12 +203,7 @@ func (c *Client) buildURL(endpoint string) string {
 // always targets the /v1/api endpoints directly. Hosts must be valid IP
 // addresses or DNS hostnames.
 func normalizeBaseURL(raw, defaultPort string) (string, error) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return "", errors.New("base URL is required")
-	}
-
-	raw, err := withScheme(raw)
+	raw, err := normalizeBaseURLInput(raw)
 	if err != nil {
 		return "", err
 	}
@@ -255,6 +250,45 @@ func normalizeBaseURL(raw, defaultPort string) (string, error) {
 	// with an invalid escape error.
 	host = strings.ReplaceAll(host, "%", "%25")
 	return fmt.Sprintf("%s://%s", u.Scheme, net.JoinHostPort(host, port)), nil
+}
+
+func normalizeBaseURLInput(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", errors.New("base URL is required")
+	}
+
+	if normalized, ok, err := normalizeUnbracketedIPv6(raw); err != nil {
+		return "", err
+	} else if ok {
+		return normalized, nil
+	}
+	return withScheme(raw)
+}
+
+func normalizeUnbracketedIPv6(raw string) (string, bool, error) {
+	if strings.Contains(raw, "://") {
+		return raw, false, nil
+	}
+
+	lastColon := strings.LastIndexByte(raw, ':')
+	if lastColon <= 0 || lastColon == len(raw)-1 {
+		return raw, false, nil
+	}
+
+	host := raw[:lastColon]
+	port := raw[lastColon+1:]
+	addressHost := strings.ReplaceAll(host, "%25", "%")
+	if _, err := netip.ParseAddr(addressHost); err == nil {
+		port, err := validatePort(port)
+		if err != nil {
+			return "", true, fmt.Errorf("%w in base URL", err)
+		}
+
+		host = strings.ReplaceAll(addressHost, "%", "%25")
+		return "http://" + net.JoinHostPort(host, port), true, nil
+	}
+	return raw, false, nil
 }
 
 // withScheme prepends the default scheme to a base URL that omits it and
