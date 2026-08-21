@@ -1,8 +1,3 @@
-// Package palrest provides a typed HTTP client for the PalServer REST API.
-//
-// Supports server info, player listing, settings, world snapshot, metrics, and
-// administrative actions (announce, kick, ban, shutdown, etc.) via basic-auth
-// authentication. All methods accept a context.Context.
 package palrest
 
 import (
