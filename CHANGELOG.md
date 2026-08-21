@@ -8,6 +8,8 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-08-21
+
 ### Fixed
 - Accept `text/plain` content types case-insensitively when validating POST
   success responses.
@@ -18,6 +20,7 @@ while on `v0.x`, breaking changes bump the minor version.
 - Codecov coverage reporting with a README badge.
 - govulncheck vulnerability scanning in CI.
 - Automated GitHub release creation on version tags.
+- CI job testing against Go tip.
 
 ### Changed
 - CI runs with minimal permissions and cancels superseded runs.
