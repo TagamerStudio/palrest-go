@@ -15,6 +15,9 @@ while on `v0.x`, breaking changes bump the minor version.
 ### Added
 - Runnable godoc examples covering client construction and common calls.
 - Dependabot updates for GitHub Actions and Go modules.
+- Codecov coverage reporting with a README badge.
+- govulncheck vulnerability scanning in CI.
+- Automated GitHub release creation on version tags.
 
 ### Changed
 - CI runs with minimal permissions and cancels superseded runs.
