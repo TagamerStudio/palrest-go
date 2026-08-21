@@ -119,8 +119,15 @@ if you inject a client via `WithHTTPClient`, its redirect policy applies.
 ## Development
 
 ```bash
-go test ./...
-go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2 run --config .golangci.yml ./...
+make check   # lint (golangci-lint) + tests with -race
+make help    # list all targets
+```
+
+To measure coverage:
+
+```bash
+go test -count=1 -race -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out
 ```
 
 ## License
