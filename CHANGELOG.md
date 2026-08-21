@@ -8,6 +8,10 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+### Changed
+- Minimum supported Go version raised from 1.25 to 1.26; the next release is
+  expected to be `v0.2.0`.
+
 ## [0.1.5] - 2026-08-21
 
 ### Fixed

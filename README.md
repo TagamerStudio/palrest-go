@@ -1,6 +1,6 @@
 # Tagamer Palworld REST Client (Go)
 
-[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev)
+[![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go)](https://go.dev)
 [![Codecov](https://codecov.io/gh/TagamerStudio/palrest-go/graph/badge.svg)](https://codecov.io/gh/TagamerStudio/palrest-go)
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
 
