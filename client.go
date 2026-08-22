@@ -245,7 +245,7 @@ func normalizeBaseURL(raw, defaultPort string) (string, error) {
 	if u.Path != "" && u.Path != "/" {
 		return "", fmt.Errorf("base URL must not contain a path: %q", redactUserinfo(raw))
 	}
-	if u.RawQuery != "" {
+	if u.ForceQuery || u.RawQuery != "" {
 		return "", fmt.Errorf("base URL must not contain a query string: %q", redactUserinfo(raw))
 	}
 	if u.Fragment != "" {
@@ -366,7 +366,7 @@ func validHostnameLabels(host string) bool {
 			return false
 		}
 	}
-	return true
+	return labelLen > 0
 }
 
 // validLabelChar reports whether r may appear at position labelLen of a DNS
