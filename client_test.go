@@ -787,6 +787,30 @@ func TestClient_TransportErrorWrapped(t *testing.T) {
 	}
 }
 
+func TestClient_WithHTTPClient_UsesInjectedTransport(t *testing.T) {
+	transport := &recordingTransport{}
+	client, err := NewClient("http://example.com:8212", "secret", WithHTTPClient(&http.Client{
+		Transport: transport,
+	}))
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	info, err := client.GetServerInfo(context.Background())
+	if err != nil {
+		t.Fatalf("GetServerInfo failed: %v", err)
+	}
+	if info.ServerName != "InjectedTransport" {
+		t.Fatalf("unexpected response: %+v", info)
+	}
+	if transport.calls.Load() != 1 {
+		t.Fatalf("injected transport called %d times, want 1", transport.calls.Load())
+	}
+	if transport.path != "/v1/api/info" {
+		t.Fatalf("unexpected request path: %q", transport.path)
+	}
+}
+
 func TestClient_DoesNotFollowRedirects(t *testing.T) {
 	var redirectTargetHit atomic.Int32
 	handler := http.NewServeMux()
@@ -841,6 +865,37 @@ func TestClient_DoesNotFollowRedirects_OnWriteEndpoints(t *testing.T) {
 	}
 }
 
+func TestClient_WithHTTPClient_UsesInjectedRedirectPolicy(t *testing.T) {
+	var redirectTargetHit atomic.Int32
+	handler := http.NewServeMux()
+	handler.HandleFunc("/v1/api/info", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/v1/api/info/", http.StatusTemporaryRedirect)
+	})
+	handler.HandleFunc("/v1/api/info/", func(w http.ResponseWriter, r *http.Request) {
+		redirectTargetHit.Add(1)
+		_ = json.NewEncoder(w).Encode(ServerInfo{ServerName: "ShouldNotReach"})
+	})
+
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	client, err := NewClient(srv.URL, "secret", WithHTTPClient(&http.Client{
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}))
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	if _, err := client.GetServerInfo(context.Background()); err == nil {
+		t.Fatal("expected error for redirect response")
+	}
+	if redirectTargetHit.Load() != 0 {
+		t.Fatal("injected client followed a redirect despite its policy")
+	}
+}
+
 func TestClient_WithTimeoutIgnoresNonPositive(t *testing.T) {
 	for _, d := range []time.Duration{0, -time.Second} {
 		client, err := NewClient("127.0.0.1:17999", "secret", WithTimeout(d))
@@ -892,6 +947,29 @@ type failingTransport struct{}
 
 func (failingTransport) RoundTrip(*http.Request) (*http.Response, error) {
 	return nil, errors.New("connection refused")
+}
+
+type recordingTransport struct {
+	calls atomic.Int32
+	path  string
+}
+
+func (t *recordingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	t.calls.Add(1)
+	t.path = req.URL.Path
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"application/json"}},
+		Body:       io.NopCloser(strings.NewReader(`{"serverName":"InjectedTransport"}`)),
+		Request:    req,
+	}, nil
+}
+
+type blockingTransport struct{}
+
+func (blockingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	<-req.Context().Done()
+	return nil, req.Context().Err()
 }
 
 // Exercises the read endpoints with distinct response shapes and assertions.
@@ -1826,6 +1904,24 @@ func TestClient_WithHTTPClientAndTimeout(t *testing.T) {
 	}
 	if httpClient.Timeout != 7*time.Second {
 		t.Fatalf("injected client timeout was mutated: %v", httpClient.Timeout)
+	}
+}
+
+func TestClient_WithHTTPClient_UsesInjectedTimeout(t *testing.T) {
+	client, err := NewClient("127.0.0.1:17999", "secret", WithHTTPClient(&http.Client{
+		Transport: blockingTransport{},
+		Timeout:   20 * time.Millisecond,
+	}))
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	_, err = client.GetServerInfo(context.Background())
+	if err == nil {
+		t.Fatal("expected injected client timeout")
+	}
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("expected deadline exceeded error, got: %v", err)
 	}
 }
 
