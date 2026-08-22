@@ -1,0 +1,27 @@
+{
+  "Time": "2026-06-17 13:00:40",
+  "FPS": 91.71,
+  "AverageFPS": 33.78,
+  "ActorData": [
+    {
+      "Type": "Character",
+      "UnitType": "Player",
+      "userid": "steam_1",
+      "ip": "127.0.0.1",
+      "level": 42,
+      "LocationX": 1.5,
+      "LocationY": 2.5,
+      "LocationZ": 3.5,
+      "IsActive": "true"
+    },
+    {
+      "Type": "PalBox",
+      "GuildID": "guild-2",
+      "GuildName": "TestGuild",
+      "Class": "BP_PalBox",
+      "LocationX": 4.2,
+      "LocationY": 5.2,
+      "LocationZ": 6.2
+    }
+  ]
+}

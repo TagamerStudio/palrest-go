@@ -1,0 +1,16 @@
+{
+  "players": [
+    {
+      "name": "PalUser",
+      "accountName": "paluser",
+      "playerId": "AFAFD830000000000000000000000000",
+      "userId": "steam_00000000000000000",
+      "ip": "127.0.0.1",
+      "ping": 3.14,
+      "location_x": 123.45,
+      "location_y": 67.89,
+      "level": 1,
+      "building_count": 119
+    }
+  ]
+}

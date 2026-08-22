@@ -1,0 +1,9 @@
+{
+  "/announce": "The message was announced.",
+  "/kick": "The player was kicked.",
+  "/ban": "The player was banned.",
+  "/unban": "The player was unbanned.",
+  "/save": "Successfully saved the world.",
+  "/shutdown": "The server will shutdown.",
+  "/stop": "The server force stopped."
+}
