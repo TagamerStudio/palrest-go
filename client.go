@@ -172,14 +172,14 @@ func NewClient(baseURL, password string, opts ...Option) (*Client, error) {
 	}
 
 	for _, opt := range opts {
-		opt(c)
+		if opt != nil {
+			opt(c)
+		}
 	}
 
 	if c.client == nil {
-		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport.Proxy = nil
 		c.client = &http.Client{
-			Transport: transport,
+			Transport: internalTransport(),
 			Timeout:   c.timeout,
 			CheckRedirect: func(*http.Request, []*http.Request) error {
 				return http.ErrUseLastResponse
@@ -189,6 +189,16 @@ func NewClient(baseURL, password string, opts ...Option) (*Client, error) {
 	}
 
 	return c, nil
+}
+
+func internalTransport() http.RoundTripper {
+	transport, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		return &http.Transport{}
+	}
+	transport = transport.Clone()
+	transport.Proxy = nil
+	return transport
 }
 
 // Close releases idle connections held by the internally created http.Client.

@@ -325,6 +325,16 @@ func TestNewClient_RequiresPassword(t *testing.T) {
 	}
 }
 
+func TestNewClient_IgnoresNilOption(t *testing.T) {
+	client, err := NewClient("127.0.0.1:17999", "secret", nil)
+	if err != nil {
+		t.Fatalf("unexpected error creating client: %v", err)
+	}
+	if client == nil || client.client == nil {
+		t.Fatal("expected client with internal HTTP client")
+	}
+}
+
 func TestClient_GetServerInfo_UsesBasicAuth(t *testing.T) {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/v1/api/info", func(w http.ResponseWriter, r *http.Request) {
@@ -853,6 +863,26 @@ func TestClient_InternalTransportIgnoresProxy(t *testing.T) {
 	}
 	if transport.Proxy != nil {
 		t.Fatal("internal transport must not use environment proxies")
+	}
+}
+
+func TestNewClient_DefaultTransportFallback(t *testing.T) {
+	original := http.DefaultTransport
+	t.Cleanup(func() { http.DefaultTransport = original })
+
+	for _, defaultTransport := range []http.RoundTripper{failingTransport{}, nil} {
+		http.DefaultTransport = defaultTransport
+		client, err := NewClient("127.0.0.1:17999", "secret")
+		if err != nil {
+			t.Fatalf("unexpected error creating client: %v", err)
+		}
+		transport, ok := client.client.Transport.(*http.Transport)
+		if !ok {
+			t.Fatalf("unexpected fallback transport type: %T", client.client.Transport)
+		}
+		if transport.Proxy != nil {
+			t.Fatal("fallback transport must not use environment proxies")
+		}
 	}
 }
 
