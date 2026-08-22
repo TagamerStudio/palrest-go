@@ -3,11 +3,13 @@ package palrest
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"math"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httptrace"
@@ -923,23 +925,44 @@ func TestClient_InternalTransportIgnoresProxy(t *testing.T) {
 	}
 }
 
-func TestNewClient_DefaultTransportFallback(t *testing.T) {
+func TestNewClient_InternalTransportIgnoresDefaultTransport(t *testing.T) {
 	original := http.DefaultTransport
 	t.Cleanup(func() { http.DefaultTransport = original })
+	http.DefaultTransport = &http.Transport{
+		DialContext: func(context.Context, string, string) (net.Conn, error) {
+			return nil, errors.New("global dialer used")
+		},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 
-	for _, defaultTransport := range []http.RoundTripper{failingTransport{}, nil} {
-		http.DefaultTransport = defaultTransport
-		client, err := NewClient("127.0.0.1:17999", "secret")
-		if err != nil {
-			t.Fatalf("unexpected error creating client: %v", err)
-		}
-		transport, ok := client.client.Transport.(*http.Transport)
-		if !ok {
-			t.Fatalf("unexpected fallback transport type: %T", client.client.Transport)
-		}
-		if transport.Proxy != nil {
-			t.Fatal("fallback transport must not use environment proxies")
-		}
+	handler := http.NewServeMux()
+	handler.HandleFunc("/v1/api/info", func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(ServerInfo{ServerName: "InternalTransport"})
+	})
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	client, err := NewClient(srv.URL, "secret")
+	if err != nil {
+		t.Fatalf("unexpected error creating client: %v", err)
+	}
+	transport, ok := client.client.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("unexpected transport type: %T", client.client.Transport)
+	}
+	if transport.Proxy != nil {
+		t.Fatal("internal transport must not use environment proxies")
+	}
+	if transport.TLSClientConfig != nil {
+		t.Fatal("internal transport inherited global TLS configuration")
+	}
+
+	info, err := client.GetServerInfo(context.Background())
+	if err != nil {
+		t.Fatalf("internal transport inherited global dialer: %v", err)
+	}
+	if info.ServerName != "InternalTransport" {
+		t.Fatalf("unexpected response: %+v", info)
 	}
 }
 

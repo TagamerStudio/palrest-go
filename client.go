@@ -193,13 +193,19 @@ func NewClient(baseURL, password string, opts ...Option) (*Client, error) {
 }
 
 func internalTransport() http.RoundTripper {
-	transport, ok := http.DefaultTransport.(*http.Transport)
-	if !ok {
-		return &http.Transport{}
+	// Keep the internal client independent of process-global transport changes.
+	return &http.Transport{
+		Proxy: nil,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
 	}
-	transport = transport.Clone()
-	transport.Proxy = nil
-	return transport
 }
 
 // Close releases idle connections held by the internally created http.Client.
