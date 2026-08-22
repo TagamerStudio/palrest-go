@@ -8,6 +8,24 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-22
+
+### Fixed
+- Redact credentials from client-construction and API errors.
+- Harden client initialization and isolate internal HTTP transport defaults from
+  process-global transport changes.
+- Reject base URLs with force-query markers or empty hostname labels.
+
+### Added
+- Independent REST contract fixtures and fuzz coverage for URL normalization,
+  actor decoding and response-body decoding.
+- Regression tests for custom HTTP client timeout, redirect and transport
+  policies.
+
+### Changed
+- Document `WithHTTPClient` as a full transport escape hatch whose proxy, TLS,
+  redirect and timeout policies are caller-controlled.
+
 ## [0.2.0] - 2026-08-21
 
 ### Fixed
