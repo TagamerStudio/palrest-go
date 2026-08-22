@@ -75,14 +75,15 @@ func WithMaxResponseBytes(maxBytes int) Option {
 	}
 }
 
-// WithHTTPClient injects a custom http.Client (used in tests). When set,
-// Close becomes a no-op and WithTimeout is ignored. The injected client's own
-// redirect policy is used as-is; the internally created client never follows
-// redirects and never uses environment proxies.
+// WithHTTPClient injects a custom http.Client. When set, Close becomes a no-op
+// and WithTimeout is ignored. The injected client's Timeout, redirect policy
+// and Transport, including proxy and TLS behavior, are used as-is. The
+// internally created client never follows redirects, never uses environment
+// proxies and uses standard TLS verification by default.
 // A nil client is ignored and falls back to the default internal client
 // (WithTimeout applies and Close is effective), matching the behavior of not
-// passing the option.
-// Use this to configure TLS (e.g., self-signed certs common in LAN deployments).
+// passing the option. Use this to configure TLS, such as for self-signed
+// certificates common in LAN deployments.
 func WithHTTPClient(httpClient *http.Client) Option {
 	return func(c *Client) {
 		c.client = httpClient

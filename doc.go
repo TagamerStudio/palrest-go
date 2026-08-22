@@ -35,5 +35,8 @@
 // The REST API is plain HTTP with basic auth: the admin password is sent
 // base64-encoded, which is not encryption. Keep usage on a trusted LAN, or
 // terminate TLS with a reverse proxy and pass an https:// base URL to
-// NewClient.
+// NewClient. The internally created client uses standard TLS verification by
+// default, never follows redirects and ignores environment proxies.
+// WithHTTPClient delegates timeout, redirect, proxy and TLS policy to the
+// injected client, so callers must configure those settings safely.
 package palrest

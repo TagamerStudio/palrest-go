@@ -47,7 +47,7 @@ err = client.MakeAnnouncement(ctx, "Server restart in 5 minutes")
 | Option              | Description                                                             |
 |---------------------|-------------------------------------------------------------------------|
 | `WithTimeout(d)`    | HTTP timeout (default: 30s; values `<= 0` are ignored). Only applies to the internally created `http.Client`. |
-| `WithHTTPClient(c)` | Inject a custom `http.Client`; its own `Timeout` and redirect policy are used as-is, `WithTimeout` is ignored and `Close()` becomes a no-op. A `nil` client is ignored and falls back to the default internal one. The internal client never follows redirects and ignores environment proxies (`HTTP_PROXY`/`HTTPS_PROXY`). |
+| `WithHTTPClient(c)` | Inject a custom `http.Client`; its own `Timeout`, redirect policy and `Transport` (including proxy and TLS behavior) are used as-is, `WithTimeout` is ignored and `Close()` becomes a no-op. A `nil` client is ignored and falls back to the default internal one. The internal client never follows redirects, ignores environment proxies (`HTTP_PROXY`/`HTTPS_PROXY`) and uses standard TLS verification by default. |
 | `WithMaxResponseBytes(n)` | Maximum accepted GET response body size in bytes (default: 10 MiB); larger responses fail with an error. Applies to every GET endpoint, including `/game-data`. POST responses are validated against the documented plain-text confirmation of each endpoint under a fixed 4 KiB cap. |
 
 `baseURL` must be a scheme + host (optionally with port); paths, query strings,
@@ -83,8 +83,10 @@ The Palworld REST API is plain HTTP with basic auth: the admin password is
 sent base64-encoded, which is **not** encrypted. The official documentation
 recommends using the API on LAN only. For any access beyond a trusted LAN,
 terminate TLS with a reverse proxy (e.g., Caddy or nginx) in front of the
-server and pass the `https://` URL to `NewClient`. This library never
-disables TLS certificate verification.
+server and pass the `https://` URL to `NewClient`. The internally created
+client uses standard TLS certificate verification by default. `WithHTTPClient`
+is a full transport escape hatch: the injected client's timeout, redirect,
+proxy and TLS policies are caller-controlled and must be configured safely.
 
 ## Errors
 
