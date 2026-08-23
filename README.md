@@ -7,8 +7,8 @@
 Typed Go client for the official [Palworld server REST API](https://docs.palworldgame.com/api/rest-api/palwold-rest-api)
 (`/v1/api`): server info, player list, settings, world snapshot (`/game-data`,
 with discriminated `CharacterActor`/`PalBoxActor` kinds), metrics, announce,
-kick, ban, unban, save, shutdown and stop. All methods take a
-`context.Context`.
+kick, ban, unban, save, shutdown and stop. All endpoint methods take a
+`context.Context`; `Close()` releases connections owned by the client.
 
 Server must run with `RESTAPIEnabled=True`. The contract fixtures in this
 repository target version `1.0.3` of the official REST API reference. This is

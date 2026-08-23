@@ -5,8 +5,9 @@
 //
 // The client covers every documented endpoint: server info, player list,
 // settings, world snapshot (/game-data), metrics, announcements, kick, ban,
-// unban, save, shutdown and stop. All methods accept a context.Context and
-// return values decoded from the documented JSON schemas.
+// unban, save, shutdown and stop. Endpoint methods accept a context.Context.
+// GET methods return values decoded from the documented JSON schemas, while
+// POST methods return an error after validating the server confirmation.
 //
 // # Usage
 //
