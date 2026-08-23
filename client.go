@@ -64,9 +64,10 @@ func WithTimeout(timeout time.Duration) Option {
 	}
 }
 
-// WithMaxResponseBytes sets the maximum accepted response body size in bytes.
-// Larger responses fail with an error. Values <= 0 are ignored. The default
-// is 10 MiB.
+// WithMaxResponseBytes sets the maximum accepted GET response body size in
+// bytes. Larger GET responses fail with an error. Values <= 0 are ignored.
+// API error bodies retain their 1 KiB cap, and POST responses retain their
+// fixed 4 KiB cap. The default GET limit is 10 MiB.
 func WithMaxResponseBytes(maxBytes int) Option {
 	return func(c *Client) {
 		if maxBytes > 0 {

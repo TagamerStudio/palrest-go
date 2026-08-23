@@ -65,7 +65,7 @@ func main() {
 |---------------------|-------------------------------------------------------------------------|
 | `WithTimeout(d)`    | HTTP timeout (default: 30s; values `<= 0` are ignored). Only applies to the internally created `http.Client`. |
 | `WithHTTPClient(c)` | Inject a custom `http.Client`; its own `Timeout`, redirect policy and `Transport` (including proxy and TLS behavior) are used as-is, `WithTimeout` is ignored and `Close()` becomes a no-op. A `nil` client is ignored and falls back to the default internal one. The internal client never follows redirects, ignores environment proxies (`HTTP_PROXY`/`HTTPS_PROXY`) and uses standard TLS verification by default. |
-| `WithMaxResponseBytes(n)` | Maximum accepted GET response body size in bytes (default: 10 MiB); larger responses fail with an error. Applies to every GET endpoint, including `/game-data`. POST responses are validated against the documented plain-text confirmation of each endpoint under a fixed 4 KiB cap. |
+| `WithMaxResponseBytes(n)` | Maximum accepted GET response body size in bytes (default: 10 MiB); values `<= 0` are ignored and larger responses fail with an error. Applies to every GET endpoint, including `/game-data`. API error bodies remain capped at 1 KiB, and POST responses are validated against the documented plain-text confirmation of each endpoint under a fixed 4 KiB cap. |
 
 `baseURL` may be a host with an optional port or an `http://`/`https://` URL.
 When the scheme or port is omitted, the client adds `http://` or `8212`,
