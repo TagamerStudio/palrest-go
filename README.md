@@ -10,11 +10,15 @@ with discriminated `CharacterActor`/`PalBoxActor` kinds), metrics, announce,
 kick, ban, unban, save, shutdown and stop. All endpoint methods take a
 `context.Context`; `Close()` releases connections owned by the client.
 
-Server must run with `RESTAPIEnabled=True`. The contract fixtures in this
-repository target version `1.0.3` of the official REST API reference. This is
-the API documentation version, not the server version returned by `/info`, and
-endpoint availability can vary across server versions. `/game-data` additionally
-requires launching the server with `-enable-gamedata-api`.
+## Server Requirements
+
+Enable the server REST API with `RESTAPIEnabled=True` and expose its
+`RESTAPIPort`. When the port is omitted from `baseURL`, the client assumes
+`8212`. The contract fixtures in this repository target version `1.0.3` of the
+official REST API reference. This is the API documentation version, not the
+server version returned by `/info`; endpoint availability can vary across
+server versions. `/game-data` additionally requires launching the server with
+`-enable-gamedata-api`.
 
 ## Install
 
