@@ -160,7 +160,9 @@ type ServerSettings struct {
 }
 
 // ServerMetrics contains server performance metrics returned by the
-// /v1/api/metrics endpoint.
+// /v1/api/metrics endpoint. ServerFrameTime is measured in milliseconds,
+// Uptime in seconds and Days in in-game days. CurrentPlayerNum, MaxPlayerNum
+// and BaseCampNum are server counts.
 type ServerMetrics struct {
 	ServerFPS        int     `json:"serverfps"`
 	CurrentPlayerNum int     `json:"currentplayernum"`
