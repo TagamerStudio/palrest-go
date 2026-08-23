@@ -92,22 +92,25 @@ proxy and TLS policies are caller-controlled and must be configured safely.
 
 ## Errors
 
-HTTP errors are returned as `*APIError` with `StatusCode`, `Method`, `Path`
-and `ResponseBody`:
+HTTP responses with status `300` or greater are returned as `*APIError` with
+`StatusCode`, `Method`, `Path` and `ResponseBody`:
 
 ```go
 _, err := client.GetServerMetrics(ctx)
 var apiErr *palrest.APIError
 if errors.As(err, &apiErr) {
     // apiErr.StatusCode, apiErr.Method, apiErr.Path,
-    // apiErr.ResponseBody (decoded JSON or raw text, for logging)
+    // apiErr.ResponseBody (best-effort decoded JSON or trimmed raw text)
 }
 ```
 
 The official API documents `200`/`400`/`401` for most
 endpoints (`/game-data` documents only `200`/`401`); error bodies are
-undocumented and may vary between versions, and are capped at 1 KiB for
-logging. GET responses with an empty or JSON-`null` body are treated as
+undocumented, may vary between versions and are capped at 1 KiB. An empty
+error body produces a nil `ResponseBody`; non-JSON bodies are kept as trimmed
+text. Treat `ResponseBody` as diagnostic data rather than a stable schema.
+Transport and response-decoding failures are returned as ordinary errors, not
+`*APIError`. GET responses with an empty or JSON-`null` body are treated as
 protocol errors. POST success responses must match the documented plain-text
 confirmation after surrounding whitespace is trimmed (`/announce` -> "The
 message was announced.", `/kick` -> "The player was kicked.", `/ban` -> "The

@@ -26,11 +26,13 @@
 //
 // # Errors
 //
-// HTTP failures are returned as *APIError carrying the status code, method,
-// path and response body for logging. GET responses with an empty or JSON-null
-// body are treated as protocol errors. POST endpoints trim surrounding
-// whitespace and validate the documented plain-text confirmation; when present,
-// Content-Type must start with text/plain case-insensitively.
+// HTTP responses with status 300 or greater are returned as *APIError carrying
+// the status code, method, path and a best-effort response body for logging.
+// The body is capped at 1 KiB and is not a stable schema. Transport and
+// decoding failures are returned as ordinary errors. GET responses with an
+// empty or JSON-null body are treated as protocol errors. POST endpoints trim
+// surrounding whitespace and validate the documented plain-text confirmation;
+// when present, Content-Type must start with text/plain case-insensitively.
 //
 // # Security
 //

@@ -125,7 +125,11 @@ type Client struct {
 	ownClient    bool
 }
 
-// APIError represents HTTP errors returned by the REST API.
+// APIError represents an HTTP response with status code 300 or greater
+// returned by the REST API. ResponseBody is best-effort decoded as JSON; when
+// decoding fails it contains trimmed raw text, and it is nil for an empty body.
+// Error bodies are capped at 1 KiB and are undocumented, so ResponseBody is
+// intended for diagnostics rather than stable application logic.
 type APIError struct {
 	StatusCode   int
 	Method       string
@@ -133,8 +137,9 @@ type APIError struct {
 	ResponseBody any
 }
 
-// Error returns a safe summary of the HTTP error. ResponseBody remains
-// available for callers that explicitly need to inspect or log it.
+// Error returns a safe summary of the HTTP error without including
+// ResponseBody. The response body remains available for callers that
+// explicitly need to inspect or log it.
 func (e *APIError) Error() string {
 	return fmt.Sprintf("rest api error: status=%d method=%s path=%s", e.StatusCode, e.Method, e.Path)
 }
