@@ -28,8 +28,9 @@
 //
 // HTTP failures are returned as *APIError carrying the status code, method,
 // path and response body for logging. GET responses with an empty or JSON-null
-// body are treated as protocol errors, and POST endpoints validate the exact
-// plain-text confirmation documented for each one.
+// body are treated as protocol errors. POST endpoints trim surrounding
+// whitespace and validate the documented plain-text confirmation; when present,
+// Content-Type must start with text/plain case-insensitively.
 //
 // # Security
 //

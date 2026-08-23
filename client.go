@@ -533,11 +533,12 @@ func (c *Client) getInto(ctx context.Context, path string, out any, maxBytes int
 	return c.requestInto(ctx, http.MethodGet, path, nil, out, maxBytes)
 }
 
-// post performs an HTTP POST and validates the success response. Success
-// bodies must be exactly the documented plain-text confirmation for the
-// endpoint (expectedText). An empty, JSON or otherwise divergent body, or a
-// non-text content type, indicates a misbehaving proxy or an error page
-// served with status 200 and is treated as a failure. Bodies are capped at
+// post performs an HTTP POST and validates the success response. After
+// surrounding whitespace is trimmed, the body must match the documented
+// plain-text confirmation for the endpoint (expectedText). When present, the
+// content type must start with text/plain, case-insensitively. Empty, JSON or
+// otherwise divergent bodies indicate a misbehaving proxy or an error page
+// served with status 200 and are treated as failures. Bodies are capped at
 // postResponseLimitBytes.
 func (c *Client) post(ctx context.Context, path string, body any, expectedText string) error {
 	bodyBytes, contentType, err := c.request(ctx, http.MethodPost, path, body, postResponseLimitBytes)

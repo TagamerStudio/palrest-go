@@ -108,15 +108,17 @@ The official API documents `200`/`400`/`401` for most
 endpoints (`/game-data` documents only `200`/`401`); error bodies are
 undocumented and may vary between versions, and are capped at 1 KiB for
 logging. GET responses with an empty or JSON-`null` body are treated as
-protocol errors. POST success responses must be exactly the plain-text
-confirmation documented for the endpoint (`/announce` -> "The message was
-announced.", `/kick` -> "The player was kicked.", `/ban` -> "The player was
-banned.", `/unban` -> "The player was unbanned.", `/save` -> "Successfully
-saved the world.", `/shutdown` -> "The server will shutdown.", `/stop` ->
-"The server force stopped."). An empty, JSON or otherwise divergent body, or
-a non-`text/plain` content type, is treated as an error (the content-type
-check runs before the body check so a 200 error page with an empty body is
-still detected, never reported as success). The internally
+protocol errors. POST success responses must match the documented plain-text
+confirmation after surrounding whitespace is trimmed (`/announce` -> "The
+message was announced.", `/kick` -> "The player was kicked.", `/ban` -> "The
+player was banned.", `/unban` -> "The player was unbanned.", `/save` ->
+"Successfully saved the world.", `/shutdown` -> "The server will shutdown.",
+`/stop` -> "The server force stopped."). If `Content-Type` is present, it
+must start with `text/plain` using a case-insensitive comparison; an absent
+header is accepted. Empty, JSON or otherwise divergent bodies, or other
+content types, are treated as errors (the content-type check runs before the
+body check so a 200 error page with an empty body is still detected, never
+reported as success). The internally
 created client never follows HTTP redirects (3xx responses surface as errors);
 if you inject a client via `WithHTTPClient`, its redirect policy applies.
 
