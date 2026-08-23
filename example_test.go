@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/tagamer-net/palrest-go"
+	"github.com/TagamerStudio/palrest-go"
 )
 
 func ExampleClient_GetServerInfo() {

@@ -8,6 +8,12 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-23
+
+### Changed
+- Move the public Go module path from `github.com/tagamer-net/palrest-go` to
+  `github.com/TagamerStudio/palrest-go` and update import examples accordingly.
+
 ## [0.2.1] - 2026-08-22
 
 ### Fixed

@@ -5,7 +5,7 @@ Typed Go client for the official Palworld server REST API.
 ## Conventions
 
 - **Language:** Go 1.26+
-- **Module:** `github.com/tagamer-net/palrest-go` (package `palrest`)
+- **Module:** `github.com/TagamerStudio/palrest-go` (package `palrest`)
 - **Library only:** no CLI, no config loading, no env vars. Constructors take
   everything explicitly (URL, credentials, options). Environment reads are the
   caller's responsibility.
@@ -28,5 +28,5 @@ one logical change per commit, `make check` before committing.
 
 ## Versioning
 
-Published with semver tags (currently `v0.2.1`). Breaking changes bump the
+Published with semver tags (currently `v0.3.0`). Breaking changes bump the
 minor version while on `v0.x`.

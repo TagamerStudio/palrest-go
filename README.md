@@ -1,4 +1,4 @@
-# Tagamer Palworld REST Client (Go)
+# Palworld Rest Client (Go)
 
 [![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go)](https://go.dev)
 [![Codecov](https://codecov.io/gh/TagamerStudio/palrest-go/graph/badge.svg)](https://codecov.io/gh/TagamerStudio/palrest-go)
@@ -23,7 +23,7 @@ server versions. `/game-data` additionally requires launching the server with
 ## Install
 
 ```bash
-go get github.com/tagamer-net/palrest-go
+go get github.com/TagamerStudio/palrest-go
 ```
 
 ## Usage
@@ -35,7 +35,7 @@ import (
     "context"
     "fmt"
 
-    palrest "github.com/tagamer-net/palrest-go"
+    palrest "github.com/TagamerStudio/palrest-go"
 )
 
 func main() {

@@ -1,3 +1,3 @@
-module github.com/tagamer-net/palrest-go
+module github.com/TagamerStudio/palrest-go
 
 go 1.26
