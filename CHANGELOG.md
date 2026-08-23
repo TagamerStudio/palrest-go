@@ -11,7 +11,7 @@ while on `v0.x`, breaking changes bump the minor version.
 ## [0.2.1] - 2026-08-22
 
 ### Fixed
-- Redact credentials from client-construction and API errors.
+- Keep credentials out of client-construction errors and `APIError.Error()` strings.
 - Harden client initialization and isolate internal HTTP transport defaults from
   process-global transport changes.
 - Reject base URLs with force-query markers or empty hostname labels.
