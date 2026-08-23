@@ -51,12 +51,13 @@ err = client.MakeAnnouncement(ctx, "Server restart in 5 minutes")
 | `WithHTTPClient(c)` | Inject a custom `http.Client`; its own `Timeout`, redirect policy and `Transport` (including proxy and TLS behavior) are used as-is, `WithTimeout` is ignored and `Close()` becomes a no-op. A `nil` client is ignored and falls back to the default internal one. The internal client never follows redirects, ignores environment proxies (`HTTP_PROXY`/`HTTPS_PROXY`) and uses standard TLS verification by default. |
 | `WithMaxResponseBytes(n)` | Maximum accepted GET response body size in bytes (default: 10 MiB); larger responses fail with an error. Applies to every GET endpoint, including `/game-data`. POST responses are validated against the documented plain-text confirmation of each endpoint under a fixed 4 KiB cap. |
 
-`baseURL` must be a scheme + host (optionally with port); paths, query strings,
+`baseURL` may be a host with an optional port or an `http://`/`https://` URL.
+When the scheme or port is omitted, the client adds `http://` or `8212`,
+respectively. Only the root path (`/`) is allowed; other paths, query strings,
 fragments, userinfo and invalid hostnames are rejected since the client always
 calls `/v1/api` endpoints directly. The scheme is case-insensitive and
-normalized to lowercase (`HTTP://` is accepted and becomes `http://`). The
-default port is `8212` when omitted,
-and ports outside 1–65535 are rejected.
+normalized to lowercase (`HTTP://` is accepted and becomes `http://`). Ports
+outside 1–65535 are rejected.
 
 > **Large responses:** `/game-data` returns a snapshot of **every actor in the
 > world**, so on large servers it can exceed the default 10 MiB cap. If you

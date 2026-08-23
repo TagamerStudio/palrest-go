@@ -150,8 +150,10 @@ func (c *Client) Format(state fmt.State, verb rune) {
 }
 
 // NewClient creates a REST client with a normalized base URL and optional
-// options. The password is used exactly as provided (it is not trimmed); pass
-// it without accidental leading or trailing whitespace.
+// options. The base URL may be a host or an http/https URL; missing schemes use
+// http and missing ports use 8212. The password is used exactly as provided
+// (it is not trimmed); pass it without accidental leading or trailing
+// whitespace.
 func NewClient(baseURL, password string, opts ...Option) (*Client, error) {
 	if strings.TrimSpace(baseURL) == "" {
 		return nil, errors.New("base URL is required")
@@ -228,9 +230,9 @@ func (c *Client) buildURL(endpoint string) string {
 // normalizeBaseURL ensures a valid base URL with an http/https scheme and the
 // default port when missing. Supports IPv6 hosts (with brackets); zone-scoped
 // IPv6 addresses keep their percent-escaped zone delimiter in the result.
-// Paths, query strings, fragments and userinfo are rejected because the client
-// always targets the /v1/api endpoints directly. Hosts must be valid IP
-// addresses or DNS hostnames.
+// The root path is allowed, while other paths, query strings, fragments and
+// userinfo are rejected because the client always targets the /v1/api
+// endpoints directly. Hosts must be valid IP addresses or DNS hostnames.
 func normalizeBaseURL(raw, defaultPort string) (string, error) {
 	raw, err := normalizeBaseURLInput(raw)
 	if err != nil {
