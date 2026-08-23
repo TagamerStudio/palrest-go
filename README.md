@@ -29,22 +29,34 @@ go get github.com/tagamer-net/palrest-go
 ## Usage
 
 ```go
-import "github.com/tagamer-net/palrest-go"
+package main
 
-client, err := palrest.NewClient("127.0.0.1:8212", "admin-password")
-if err != nil {
-    // handle error
+import (
+    "context"
+    "fmt"
+
+    palrest "github.com/tagamer-net/palrest-go"
+)
+
+func main() {
+    client, err := palrest.NewClient("127.0.0.1:8212", "admin-password")
+    if err != nil {
+        panic(err)
+    }
+    defer client.Close()
+
+    ctx := context.Background()
+
+    info, err := client.GetServerInfo(ctx)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("Connected to %s\n", info.ServerName)
+
+    if err := client.MakeAnnouncement(ctx, "Server restart in 5 minutes"); err != nil {
+        panic(err)
+    }
 }
-defer client.Close()
-
-ctx := context.Background()
-
-info, err := client.GetServerInfo(ctx)
-if err != nil {
-    // handle error
-}
-
-err = client.MakeAnnouncement(ctx, "Server restart in 5 minutes")
 ```
 
 ### Options

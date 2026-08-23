@@ -11,15 +11,19 @@
 //
 // # Usage
 //
-// Create a client once and reuse it across requests:
+// Create a client once and reuse it across requests from a function that
+// receives a context:
 //
-//	client, err := palrest.NewClient("127.0.0.1:8212", "admin-password")
-//	if err != nil {
+//	func example(ctx context.Context) error {
+//		client, err := NewClient("127.0.0.1:8212", "admin-password")
+//		if err != nil {
+//			return err
+//		}
+//		defer func() { _ = client.Close() }()
+//
+//		_, err = client.GetServerInfo(ctx)
 //		return err
 //	}
-//	defer client.Close()
-//
-//	info, err := client.GetServerInfo(ctx)
 //
 // Behavior is adjusted with the options accepted by NewClient:
 // WithTimeout, WithMaxResponseBytes and WithHTTPClient.
