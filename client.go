@@ -615,7 +615,8 @@ func (c *Client) GetGameData(ctx context.Context) (*GameData, error) {
 // RESTClient – POST endpoints
 // ---------------------------------------------------------------------------
 
-// MakeAnnouncement sends an announcement message to all players.
+// MakeAnnouncement sends an announcement message to all players. The message
+// is trimmed and must not be empty.
 func (c *Client) MakeAnnouncement(ctx context.Context, message string) error {
 	message, err := requiredTrimmed(message, "message")
 	if err != nil {
@@ -624,17 +625,19 @@ func (c *Client) MakeAnnouncement(ctx context.Context, message string) error {
 	return c.post(ctx, "/announce", map[string]string{"message": message}, announceSuccessText)
 }
 
-// KickPlayer kicks a player from the server by user ID with a message.
+// KickPlayer kicks a player from the server by user ID. The user ID is trimmed
+// and required; the optional message is trimmed and omitted when empty.
 func (c *Client) KickPlayer(ctx context.Context, userID, message string) error {
 	return c.playerAction(ctx, "/kick", userID, message, kickSuccessText)
 }
 
-// BanPlayer bans a player from the server by user ID with a message.
+// BanPlayer bans a player from the server by user ID. The user ID is trimmed
+// and required; the optional message is trimmed and omitted when empty.
 func (c *Client) BanPlayer(ctx context.Context, userID, message string) error {
 	return c.playerAction(ctx, "/ban", userID, message, banSuccessText)
 }
 
-// UnbanPlayer unbans a player by user ID.
+// UnbanPlayer unbans a player by user ID. The user ID is trimmed and required.
 func (c *Client) UnbanPlayer(ctx context.Context, userID string) error {
 	userID, err := requiredTrimmed(userID, "userid")
 	if err != nil {
@@ -648,7 +651,8 @@ func (c *Client) SaveServerState(ctx context.Context) error {
 	return c.post(ctx, "/save", nil, saveSuccessText)
 }
 
-// ShutdownServer shuts down the server after waitTime seconds with a message.
+// ShutdownServer shuts down the server after waitTime seconds. waitTime must
+// not be negative; the optional message is trimmed and omitted when empty.
 // The official documentation does not define the behavior of a waitTime of 0;
 // observed server behavior is immediate shutdown. Use StopServer for force stop.
 func (c *Client) ShutdownServer(ctx context.Context, waitTime int, message string) error {
@@ -692,7 +696,7 @@ func requiredTrimmed(value, name string) (string, error) {
 	return value, nil
 }
 
-// StopServer stops the server immediately.
+// StopServer requests an immediate force stop of the server.
 func (c *Client) StopServer(ctx context.Context) error {
 	return c.post(ctx, "/stop", nil, stopSuccessText)
 }
