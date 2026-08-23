@@ -2277,6 +2277,14 @@ func TestClient_FormatRedactsPassword(t *testing.T) {
 	}
 }
 
+func TestClient_FormatNilReceiver(t *testing.T) {
+	var client *Client
+
+	if got := fmt.Sprintf("%v", client); got != "<nil>" {
+		t.Fatalf("unexpected nil client format: %q", got)
+	}
+}
+
 func TestClient_GetServerSettings_ErrorPath(t *testing.T) {
 	client, err := NewClient("127.0.0.1:17999", "secret", WithHTTPClient(&http.Client{
 		Transport: faultInjectionTransport{
@@ -2354,6 +2362,12 @@ func TestNormalizeBaseURL_Empty(t *testing.T) {
 
 func TestRedactUserinfo_NoScheme(t *testing.T) {
 	if got := redactUserinfo("plain"); got != "plain" {
+		t.Fatalf("unexpected result: %s", got)
+	}
+}
+
+func TestRedactUserinfo_NoSchemeWithComponents(t *testing.T) {
+	if got := redactUserinfo("//example.com?token=secret"); got != "[invalid base URL]" {
 		t.Fatalf("unexpected result: %s", got)
 	}
 }
