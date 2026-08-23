@@ -64,7 +64,10 @@ func ExampleClient_GetGameData() {
 			"Time": "2026-06-17 13:00:40",
 			"FPS": 60,
 			"AverageFPS": 30,
-			"ActorData": [{"Type": "Character", "UnitType": "Player", "InstanceID": "char-1", "NickName": "PalUser"}]
+			"ActorData": [
+				{"Type": "PalBox", "GuildID": "guild-1"},
+				{"Type": "Character", "UnitType": "Player", "InstanceID": "char-1", "NickName": "PalUser"}
+			]
 		}`)
 	}))
 	defer srv.Close()
@@ -83,8 +86,14 @@ func ExampleClient_GetGameData() {
 		fmt.Println("request error:", err)
 		return
 	}
-	actor := data.ActorData[0]
-	fmt.Printf("%s (%s) is active in the world", actor.Character.NickName, actor.Character.InstanceID)
+	for _, actor := range data.ActorData {
+		if actor.Character == nil {
+			continue
+		}
+		fmt.Printf("%s (%s) is active in the world", actor.Character.NickName, actor.Character.InstanceID)
+		return
+	}
+	fmt.Println("no character actor found")
 	// Output: PalUser (char-1) is active in the world
 }
 
