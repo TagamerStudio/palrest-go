@@ -172,7 +172,9 @@ type ServerMetrics struct {
 }
 
 // GameData is the world actor snapshot returned by the /v1/api/game-data
-// endpoint. Requires the server to run with -enable-gamedata-api.
+// endpoint. Time uses the server-local "YYYY-MM-DD HH:MM:SS" format rather
+// than ISO 8601; FPS is instantaneous and AverageFPS is the average server
+// FPS. Requires the server to run with -enable-gamedata-api.
 type GameData struct {
 	Time       string  `json:"Time"`
 	FPS        float64 `json:"FPS"`
@@ -192,7 +194,9 @@ type Actor struct {
 }
 
 // CharacterActor is an actor of type "Character": players, pals and NPCs.
-// Fields that do not apply to the UnitType are left as zero values.
+// UnitType may be Player, OtomoPal, BaseCampPal, WildPal or NPC. Trainer
+// fields apply to OtomoPal and BaseCampPal; UserID is player-only. Fields that
+// do not apply to the UnitType are left as zero values.
 type CharacterActor struct {
 	Type              string  `json:"Type"`
 	InstanceID        string  `json:"InstanceID"`
@@ -234,9 +238,10 @@ type PalBoxActor struct {
 
 // UnmarshalJSON decodes the actor payload and populates the pointer matching
 // the Type discriminator. Unknown non-empty Type values are kept on the Actor
-// without an error to stay compatible with future server versions; a missing,
-// null or empty Type is rejected. A JSON null leaves the Actor zeroed so that
-// a single null entry does not invalidate the whole snapshot.
+// without an error to stay compatible with future server versions. Object
+// payloads with a missing, null or empty Type are rejected; a JSON null actor
+// entry is accepted and leaves the Actor zeroed so that it does not invalidate
+// the whole snapshot.
 func (a *Actor) UnmarshalJSON(data []byte) error {
 	a.Character = nil
 	a.PalBox = nil
