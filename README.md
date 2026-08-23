@@ -10,10 +10,11 @@ with discriminated `CharacterActor`/`PalBoxActor` kinds), metrics, announce,
 kick, ban, unban, save, shutdown and stop. All methods take a
 `context.Context`.
 
-Server must run with `RESTAPIEnabled=True`. The API targets recent server
-versions: `/settings`, `/metrics`, `/unban`, `/stop` and `/game-data` appeared
-in later documentation lines (all present since `1.0.2`), and `/game-data`
-additionally requires launching the server with `-enable-gamedata-api`.
+Server must run with `RESTAPIEnabled=True`. The contract fixtures in this
+repository target version `1.0.3` of the official REST API reference. This is
+the API documentation version, not the server version returned by `/info`, and
+endpoint availability can vary across server versions. `/game-data` additionally
+requires launching the server with `-enable-gamedata-api`.
 
 ## Install
 

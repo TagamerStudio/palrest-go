@@ -1065,8 +1065,8 @@ func TestClient_ReadEndpoints(t *testing.T) {
 }
 
 // TestClient_GetServerSettings_FullSchema decodes the complete /settings
-// response documented in the official REST API reference (v1.0.2) and
-// rejects any field the client schema does not cover.
+// response represented by the client contract and rejects any field the client
+// schema does not cover.
 func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 	raw := `{
 		"Difficulty": "None",
@@ -1388,10 +1388,10 @@ const (
 	}`
 )
 
-// TestClient_GetGameData_FullSchema decodes the /game-data snapshot documented
-// in the official REST API reference (v1.0.2). The strict decode of the
-// snapshot pins the top-level schema; actor-inner field coverage is pinned
-// against the documented fixtures via the two direct strict decodes below.
+// TestClient_GetGameData_FullSchema decodes the /game-data snapshot represented
+// by the client contract. The strict decode of the snapshot pins the top-level
+// schema; actor-inner field coverage is pinned against the documented fixtures
+// via the two direct strict decodes below.
 // The runtime decode path (Actor.UnmarshalJSON) deliberately tolerates unknown
 // actor fields and kinds for forward compatibility, so unknown fields inside
 // an actor must not be rejected here.
