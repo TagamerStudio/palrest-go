@@ -35,8 +35,10 @@ type PlayerList struct {
 }
 
 // ServerSettings contains the server settings returned by the /v1/api/settings
-// endpoint. Fields follow the official REST API schema; numeric settings are
-// floats and toggles are booleans.
+// endpoint. Fields mirror JSON keys observed in the REST API and server
+// configuration; the available schema can vary by server version. Fields
+// absent from a response remain zero-valued. Numeric settings are floats and
+// toggles are booleans.
 type ServerSettings struct {
 	Difficulty                                      string   `json:"Difficulty"`
 	RandomizerType                                  string   `json:"RandomizerType"`
