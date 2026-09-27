@@ -133,8 +133,8 @@ message was announced.", `/kick` -> "The player was kicked.", `/ban` -> "The
 player was banned.", `/unban` -> "The player was unbanned.", `/save` ->
 "Successfully saved the world.", `/shutdown` -> "The server will shutdown.",
 `/stop` -> "The server force stopped."). If `Content-Type` is present, it
-must start with `text/plain` using a case-insensitive comparison; an absent
-header is accepted. Empty, JSON or otherwise divergent bodies, or other
+must parse as `text/plain` (optional parameters such as `charset` allowed)
+using a case-insensitive comparison; an absent header is accepted. Empty, JSON or otherwise divergent bodies, or other
 content types, are treated as errors (the content-type check runs before the
 body check so a 200 error page with an empty body is still detected, never
 reported as success). The internally
