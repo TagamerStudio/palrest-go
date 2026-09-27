@@ -8,9 +8,17 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+### Fixed
+- Reject POST success responses whose `Content-Type` only shares the
+  `text/plain` prefix (e.g. `text/plainfoo`) and malformed content types.
+- Show `timeout:n/a` when formatting a client that uses an injected HTTP
+  client, whose timeout is caller-controlled.
+
 ### Changed
 - Update the REST contract fixtures to the official API reference `v1.0.4`;
   the documented endpoint schemas are unchanged.
+- Raise `MaxIdleConnsPerHost` of the internal transport to 16 to support
+  concurrent requests.
 
 ## [0.3.0] - 2026-08-23
 

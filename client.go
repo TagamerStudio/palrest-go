@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"mime"
 	"net"
 	"net/http"
 	"net/netip"
@@ -30,6 +31,8 @@ const (
 	maxResponseBytes  = 10 << 20
 	maxErrorBodyBytes = 1 << 10
 	drainLimitBytes   = 64 << 10
+
+	maxIdleConnsPerHost = 16
 
 	// postResponseLimitBytes caps success response bodies of POST endpoints;
 	// they are validated against the documented plain-text confirmation and
@@ -152,7 +155,11 @@ func (c *Client) Format(state fmt.State, verb rune) {
 		_, _ = io.WriteString(state, "<nil>")
 		return
 	}
-	_, _ = fmt.Fprintf(state, "palrest.Client{baseURL:%q, timeout:%s, maxBodyBytes:%d, ownClient:%t}", c.baseURL, c.timeout, c.maxBodyBytes, c.ownClient)
+	timeout := c.timeout.String()
+	if !c.ownClient {
+		timeout = "n/a"
+	}
+	_, _ = fmt.Fprintf(state, "palrest.Client{baseURL:%q, timeout:%s, maxBodyBytes:%d, ownClient:%t}", c.baseURL, timeout, c.maxBodyBytes, c.ownClient)
 }
 
 // NewClient creates a REST client with a normalized base URL and optional
@@ -210,6 +217,7 @@ func internalTransport() http.RoundTripper {
 		}).DialContext,
 		ForceAttemptHTTP2:     true,
 		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   maxIdleConnsPerHost,
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
@@ -542,17 +550,23 @@ func (c *Client) getInto(ctx context.Context, path string, out any, maxBytes int
 // post performs an HTTP POST and validates the success response. After
 // surrounding whitespace is trimmed, the body must match the documented
 // plain-text confirmation for the endpoint (expectedText). When present, the
-// content type must start with text/plain, case-insensitively. Empty, JSON or
-// otherwise divergent bodies indicate a misbehaving proxy or an error page
-// served with status 200 and are treated as failures. Bodies are capped at
-// postResponseLimitBytes.
+// content type must parse as text/plain, case-insensitively and with optional
+// parameters. Empty, JSON or otherwise divergent bodies indicate a misbehaving
+// proxy or an error page served with status 200 and are treated as failures.
+// Bodies are capped at postResponseLimitBytes.
 func (c *Client) post(ctx context.Context, path string, body any, expectedText string) error {
 	bodyBytes, contentType, err := c.request(ctx, http.MethodPost, path, body, postResponseLimitBytes)
 	if err != nil {
 		return err
 	}
-	if contentType != "" && !strings.HasPrefix(strings.ToLower(contentType), "text/plain") {
-		return fmt.Errorf("POST %s: unexpected content-type %q", path, contentType)
+	if contentType != "" {
+		mediaType, _, err := mime.ParseMediaType(contentType)
+		if err != nil {
+			return fmt.Errorf("POST %s: invalid content-type %q", path, contentType)
+		}
+		if mediaType != "text/plain" {
+			return fmt.Errorf("POST %s: unexpected content-type %q", path, contentType)
+		}
 	}
 	if trimmed := strings.TrimSpace(string(bodyBytes)); trimmed != expectedText {
 		return fmt.Errorf("POST %s: unexpected response body %q, want %q", path, trimmed, expectedText)
