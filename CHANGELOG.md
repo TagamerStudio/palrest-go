@@ -8,6 +8,8 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-27
+
 ### Added
 - Codecov coverage status thresholds for project and patch coverage.
 
