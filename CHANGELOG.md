@@ -25,6 +25,8 @@ while on `v0.x`, breaking changes bump the minor version.
 - Raise `MaxIdleConnsPerHost` of the internal transport to 16 to support
   concurrent requests.
 - Add `make vet` and `make fuzz` targets; `make check` now runs `go vet`.
+- Document rejected underscore hostnames, `/settings` fields beyond the API
+  reference and module path case sensitivity; fix the README `Close` example.
 
 ## [0.3.0] - 2026-08-23
 

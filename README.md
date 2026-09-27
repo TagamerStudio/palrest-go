@@ -18,13 +18,18 @@ Enable the server REST API with `RESTAPIEnabled=True` and expose its
 official REST API reference. This is the API documentation version, not the
 server version returned by `/info`; endpoint availability can vary across
 server versions. `/game-data` additionally requires launching the server with
-`-enable-gamedata-api`.
+`-enable-gamedata-api`. Some server builds return more `/settings` entries
+than the API reference documents; `ServerSettings` covers the documented
+schema plus observed fields and ignores unknown ones.
 
 ## Install
 
 ```bash
 go get github.com/TagamerStudio/palrest-go
 ```
+
+The module path is case-sensitive: import it exactly as
+`github.com/TagamerStudio/palrest-go`.
 
 ## Usage
 
@@ -43,7 +48,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    defer client.Close()
+    defer func() { _ = client.Close() }()
 
     ctx := context.Background()
 
@@ -73,7 +78,9 @@ respectively. Only the root path (`/`) is allowed; other paths, query strings,
 fragments, userinfo and invalid hostnames are rejected since the client always
 calls `/v1/api` endpoints directly. The scheme is case-insensitive and
 normalized to lowercase (`HTTP://` is accepted and becomes `http://`). Ports
-outside 1–65535 are rejected.
+outside 1–65535 are rejected. Hostnames must be valid DNS labels, so
+underscores (common in Docker Compose service names such as `pal_server`) are
+rejected.
 
 > **Large responses:** `/game-data` returns a snapshot of **every actor in the
 > world**, so on large servers it can exceed the default 10 MiB cap. If you
