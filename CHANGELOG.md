@@ -8,6 +8,10 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+### Changed
+- Update the REST contract fixtures to the official API reference `v1.0.4`;
+  the documented endpoint schemas are unchanged.
+
 ## [0.3.0] - 2026-08-23
 
 ### Changed
