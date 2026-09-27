@@ -712,6 +712,72 @@ func TestClient_Post_RejectsDivergentPlainText(t *testing.T) {
 	}
 }
 
+func TestClient_Post_RejectsPrefixOnlyPlainContentType(t *testing.T) {
+	handler := http.NewServeMux()
+	handler.HandleFunc("/v1/api/save", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plainfoo")
+		_, _ = w.Write([]byte(saveSuccessText))
+	})
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	client, err := NewClient(srv.URL, "secret")
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	err = client.SaveServerState(context.Background())
+	if err == nil {
+		t.Fatal("expected error for a content type that only shares the text/plain prefix")
+	}
+	if !strings.Contains(err.Error(), `unexpected content-type "text/plainfoo"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestClient_Post_RejectsMalformedContentType(t *testing.T) {
+	handler := http.NewServeMux()
+	handler.HandleFunc("/v1/api/save", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset")
+		_, _ = w.Write([]byte(saveSuccessText))
+	})
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	client, err := NewClient(srv.URL, "secret")
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	err = client.SaveServerState(context.Background())
+	if err == nil {
+		t.Fatal("expected error for a malformed content type")
+	}
+	if !strings.Contains(err.Error(), `invalid content-type "text/plain; charset"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestClient_FormatInjectedClientShowsTimeoutNAT(t *testing.T) {
+	client, err := NewClient("127.0.0.1:17999", "secret", WithHTTPClient(&http.Client{Timeout: 7 * time.Second}))
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+
+	formatted := fmt.Sprintf("%v", client)
+	if !strings.Contains(formatted, "timeout:n/a") {
+		t.Fatalf("expected timeout:n/a for an injected client: %s", formatted)
+	}
+
+	internal, err := NewClient("127.0.0.1:17999", "secret", WithTimeout(42*time.Second))
+	if err != nil {
+		t.Fatalf("error creating client: %v", err)
+	}
+	if formatted := fmt.Sprintf("%v", internal); !strings.Contains(formatted, "timeout:42s") {
+		t.Fatalf("expected the internal timeout in client format: %s", formatted)
+	}
+}
+
 func TestClient_Post_RejectsJSONContentTypeWithDocumentedText(t *testing.T) {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/v1/api/save", func(w http.ResponseWriter, r *http.Request) {
@@ -922,6 +988,9 @@ func TestClient_InternalTransportIgnoresProxy(t *testing.T) {
 	}
 	if transport.Proxy != nil {
 		t.Fatal("internal transport must not use environment proxies")
+	}
+	if transport.MaxIdleConnsPerHost != maxIdleConnsPerHost {
+		t.Fatalf("unexpected MaxIdleConnsPerHost: %d", transport.MaxIdleConnsPerHost)
 	}
 }
 

@@ -36,7 +36,7 @@
 // decoding failures are returned as ordinary errors. GET responses with an
 // empty or JSON-null body are treated as protocol errors. POST endpoints trim
 // surrounding whitespace and validate the documented plain-text confirmation;
-// when present, Content-Type must start with text/plain case-insensitively.
+// when present, Content-Type must parse as text/plain case-insensitively.
 //
 // # Security
 //

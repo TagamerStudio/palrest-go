@@ -8,6 +8,28 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-27
+
+### Added
+- Codecov coverage status thresholds for project and patch coverage.
+
+### Fixed
+- Reject POST success responses whose `Content-Type` only shares the
+  `text/plain` prefix (e.g. `text/plainfoo`) and malformed content types.
+- CI Go tip job builds the current `master` branch instead of a pinned
+  historical commit.
+- Show `timeout:n/a` when formatting a client that uses an injected HTTP
+  client, whose timeout is caller-controlled.
+
+### Changed
+- Update the REST contract fixtures to the official API reference `v1.0.4`;
+  the documented endpoint schemas are unchanged.
+- Raise `MaxIdleConnsPerHost` of the internal transport to 16 to support
+  concurrent requests.
+- Add `make vet` and `make fuzz` targets; `make check` now runs `go vet`.
+- Document rejected underscore hostnames, `/settings` fields beyond the API
+  reference and module path case sensitivity; fix the README `Close` example.
+
 ## [0.3.0] - 2026-08-23
 
 ### Changed

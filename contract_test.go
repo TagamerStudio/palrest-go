@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	contractVersion  = "v1.0.3"
+	contractVersion  = "v1.0.4"
 	contractPrefix   = "/v1/api"
 	contractUser     = "admin"
 	contractPassword = "contract-password"

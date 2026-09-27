@@ -74,7 +74,7 @@ jobs:
         run: |
           git init "$RUNNER_TEMP/gotip"
           git -C "$RUNNER_TEMP/gotip" remote add origin https://go.googlesource.com/go
-          git -C "$RUNNER_TEMP/gotip" fetch --depth=1 origin e5da70bf014ddd13e359eb2226eed3d951e9a172
+          git -C "$RUNNER_TEMP/gotip" fetch --depth=1 origin master
           git -C "$RUNNER_TEMP/gotip" checkout --detach FETCH_HEAD
           cd "$RUNNER_TEMP/gotip/src"
           ./make.bash
