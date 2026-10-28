@@ -225,8 +225,10 @@ func internalTransport() http.RoundTripper {
 }
 
 // Close releases idle connections held by the internally created http.Client.
-// It is a no-op when a custom client was injected via WithHTTPClient.
-// Calls after Close are not supported; do not issue requests concurrently with Close.
+// It is a no-op when a custom client was injected via WithHTTPClient. Close only
+// affects idle connections: in-flight requests are not interrupted, it is safe
+// to call multiple times, and the Client can still issue new requests. Callers
+// normally close the client when they are done with it.
 func (c *Client) Close() error {
 	if c.ownClient {
 		c.client.CloseIdleConnections()
