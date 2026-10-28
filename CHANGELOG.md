@@ -8,6 +8,9 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+### Fixed
+- Bump `govulncheck` to v1.9.0 so vulnerability scanning works with Go 1.27.
+
 ## [0.3.2] - 2026-10-28
 
 ### Added
