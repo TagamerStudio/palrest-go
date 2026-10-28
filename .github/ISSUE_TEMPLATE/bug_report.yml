@@ -1,0 +1,91 @@
+name: Bug report
+description: Report a problem with the palrest-go client
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Do not include the Palworld admin
+        password, server addresses, player data or other secrets.
+  - type: input
+    id: library-version
+    attributes:
+      label: palrest-go version
+      description: Release tag or commit SHA.
+      placeholder: v0.3.1
+    validations:
+      required: true
+  - type: input
+    id: go-version
+    attributes:
+      label: Go version
+      description: Output of `go version`.
+      placeholder: go1.27.2 linux/amd64
+    validations:
+      required: true
+  - type: input
+    id: server-version
+    attributes:
+      label: Palworld server version
+      description: Version reported by /v1/api/info, when available.
+      placeholder: v0.3.12.0
+    validations:
+      required: false
+  - type: input
+    id: api-version
+    attributes:
+      label: REST API reference version
+      description: Version of the official documentation used (see README).
+      placeholder: "1.0.4"
+    validations:
+      required: false
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Code or steps that reproduce the problem. Remove secrets.
+      render: go
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or errors
+      description: Redact the admin password, addresses and player data.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I removed passwords, server addresses and player data from this report.
+          required: true
+        - label: I searched existing issues before opening this report.
+          required: true
