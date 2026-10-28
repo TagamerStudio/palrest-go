@@ -8,6 +8,27 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-10-28
+
+### Added
+- Security policy with a private vulnerability reporting channel.
+- Contributing guide and GitHub issue/pull request templates.
+- Weekly scheduled fuzz workflow covering all fuzz targets.
+
+### Fixed
+- POST requests now advertise `Accept: text/plain`, matching the documented
+  plain-text success responses.
+
+### Changed
+- Test Go 1.26.x and 1.27.x in CI; govulncheck and the Go tip bootstrap run on
+  Go 1.27.x.
+- Upload Codecov coverage for internal pull requests so the patch coverage gate
+  applies.
+- Bump `golangci-lint` to v2.15.0.
+- Bump `codecov-action` to 7.1.1.
+- Clarify that `Close` only releases idle connections, is safe to call multiple
+  times and does not invalidate the client.
+
 ## [0.3.1] - 2026-09-27
 
 ### Added
