@@ -465,7 +465,11 @@ func (c *Client) request(ctx context.Context, method, path string, body any, max
 	}
 
 	req.SetBasicAuth(defaultUsername, c.password)
-	req.Header.Set("Accept", "application/json")
+	accept := "application/json"
+	if method == http.MethodPost {
+		accept = "text/plain"
+	}
+	req.Header.Set("Accept", accept)
 	req.Header.Set("User-Agent", userAgent)
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")

@@ -251,8 +251,12 @@ func assertContractRequestMetadata(t *testing.T, endpoint contractEndpoint, r *h
 	if !ok || username != contractUser || password != contractPassword {
 		t.Errorf("%s: unexpected basic auth: username=%q authenticated=%t", endpoint.name, username, ok)
 	}
-	if got := r.Header.Get("Accept"); got != "application/json" {
-		t.Errorf("%s: Accept = %q, want application/json", endpoint.name, got)
+	wantAccept := "application/json"
+	if endpoint.method == http.MethodPost {
+		wantAccept = "text/plain"
+	}
+	if got := r.Header.Get("Accept"); got != wantAccept {
+		t.Errorf("%s: Accept = %q, want %s", endpoint.name, got, wantAccept)
 	}
 	if got := r.Header.Get("User-Agent"); got != "palrest-go" {
 		t.Errorf("%s: User-Agent = %q, want palrest-go", endpoint.name, got)

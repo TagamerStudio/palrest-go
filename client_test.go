@@ -1758,6 +1758,7 @@ type writeEndpointCall struct {
 	path   string
 	method string
 	body   string
+	accept string
 }
 
 // postSuccessTexts maps each POST endpoint path to its documented plain-text
@@ -1794,7 +1795,7 @@ func TestClient_WriteEndpoints(t *testing.T) {
 				body = string(bytes)
 			}
 			mu.Lock()
-			calls = append(calls, writeEndpointCall{path: r.URL.Path, method: r.Method, body: body})
+			calls = append(calls, writeEndpointCall{path: r.URL.Path, method: r.Method, body: body, accept: r.Header.Get("Accept")})
 			mu.Unlock()
 			w.Header().Set("Content-Type", "text/plain;charset=utf-8")
 			_, _ = w.Write([]byte(postSuccessTexts[r.URL.Path]))
@@ -1846,9 +1847,7 @@ func assertCalls(t *testing.T, calls []writeEndpointCall, paths []string) {
 
 	seen := map[string]int{}
 	for _, c := range calls {
-		if c.method != http.MethodPost {
-			t.Fatalf("unexpected method on %s: %s", c.path, c.method)
-		}
+		assertCallMetadata(t, c)
 		seen[c.path]++
 	}
 
@@ -1857,6 +1856,25 @@ func assertCalls(t *testing.T, calls []writeEndpointCall, paths []string) {
 			t.Fatalf("endpoint %s should have 1 call, had %d", path, seen[path])
 		}
 	}
+
+	assertCallPayloads(t, calls)
+}
+
+// assertCallMetadata verifies the method and Accept header of a write call.
+func assertCallMetadata(t *testing.T, c writeEndpointCall) {
+	t.Helper()
+
+	if c.method != http.MethodPost {
+		t.Fatalf("unexpected method on %s: %s", c.path, c.method)
+	}
+	if c.accept != "text/plain" {
+		t.Fatalf("unexpected Accept on %s: %q", c.path, c.accept)
+	}
+}
+
+// assertCallPayloads verifies the documented field names in write payloads.
+func assertCallPayloads(t *testing.T, calls []writeEndpointCall) {
+	t.Helper()
 
 	required := map[string][]string{
 		"/v1/api/announce": {"message"},
