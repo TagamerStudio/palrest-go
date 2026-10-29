@@ -27,7 +27,7 @@ suite with the race detector. Run it before every commit.
 | `make lint`  | Runs the pinned `golangci-lint` via `go run`.                |
 | `make vet`   | Runs `go vet ./...`.                                         |
 | `make fmt`   | Installs `gofumpt`/`goimports` and formats the tree.         |
-| `make fuzz`  | Runs the base URL fuzz target for 30 seconds.                |
+| `make fuzz`  | Runs all fuzz targets for 30 seconds each.                   |
 | `make tidy`  | Runs `go mod tidy`.                                          |
 | `make check` | `vet` + `lint` + `test`.                                     |
 
