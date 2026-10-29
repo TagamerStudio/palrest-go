@@ -89,23 +89,25 @@ version and be documented.
 
 ## Releases
 
-Releases are cut from `main` by a maintainer:
+Releases are cut from `main` by a maintainer. `main` requires a pull request
+and the `CI success` check.
 
 1. Update `CHANGELOG.md`, the current version in `AGENTS.md`, `README.md` when
    the targeted Palworld version changes, `COMPATIBILITY.md`, and `SECURITY.md`
    when the supported library line changes.
 2. Run `make check`.
-3. Commit as `chore: release vX.Y.Z` and push `main`.
-4. Wait for CI to pass on the release commit.
-5. Create an annotated tag and push it:
+3. Commit as `chore: release vX.Y.Z`, push the branch, and open a pull request.
+4. Wait for `CI success`, then merge the pull request.
+5. Wait for `CI success` on the merged `main` commit.
+6. Create an annotated tag on that commit and push it:
 
    ```bash
    git tag -a vX.Y.Z -m "vX.Y.Z"
    git push origin vX.Y.Z
    ```
 
-6. The Release workflow validates the tag and changelog, then publishes the
-   GitHub release.
+7. The Release workflow validates the tag, CI status and changelog, then
+   publishes the GitHub release.
 
 Never move or recreate a published tag.
 
