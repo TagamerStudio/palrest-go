@@ -120,6 +120,7 @@ var _ RESTClient = (*Client)(nil)
 
 // Client is the typed HTTP client for the PalServer REST API. Basic auth is
 // always the fixed "admin" user; the constructor takes the REST API password.
+// The zero value is not usable; create clients with NewClient.
 type Client struct {
 	baseURL      string
 	password     string
@@ -148,6 +149,25 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("rest api error: status=%d method=%s path=%s", e.StatusCode, e.Method, e.Path)
 }
 
+// String returns a redacted representation of the client without its password
+// or internal HTTP client.
+func (c Client) String() string {
+	return c.redacted()
+}
+
+// GoString returns a redacted Go-syntax representation of the client.
+func (c Client) GoString() string {
+	return c.redacted()
+}
+
+func (c Client) redacted() string {
+	timeout := c.timeout.String()
+	if !c.ownClient {
+		timeout = "n/a"
+	}
+	return fmt.Sprintf("palrest.Client{baseURL:%q, timeout:%s, maxBodyBytes:%d, ownClient:%t}", c.baseURL, timeout, c.maxBodyBytes, c.ownClient)
+}
+
 // Format writes a redacted representation of the client without its password
 // or internal HTTP client.
 func (c *Client) Format(state fmt.State, verb rune) {
@@ -155,11 +175,7 @@ func (c *Client) Format(state fmt.State, verb rune) {
 		_, _ = io.WriteString(state, "<nil>")
 		return
 	}
-	timeout := c.timeout.String()
-	if !c.ownClient {
-		timeout = "n/a"
-	}
-	_, _ = fmt.Fprintf(state, "palrest.Client{baseURL:%q, timeout:%s, maxBodyBytes:%d, ownClient:%t}", c.baseURL, timeout, c.maxBodyBytes, c.ownClient)
+	_, _ = io.WriteString(state, c.redacted())
 }
 
 // NewClient creates a REST client with a normalized base URL and optional
@@ -257,7 +273,7 @@ func normalizeBaseURL(raw, defaultPort string) (string, error) {
 
 	u, err := url.Parse(raw)
 	if err != nil {
-		return "", fmt.Errorf("invalid base URL %q: %w", redactUserinfo(raw), err)
+		return "", fmt.Errorf("invalid base URL: %w", sanitizeURLError(err))
 	}
 
 	if u.Scheme != "http" && u.Scheme != "https" {
@@ -297,6 +313,16 @@ func normalizeBaseURL(raw, defaultPort string) (string, error) {
 	// with an invalid escape error.
 	host = strings.ReplaceAll(host, "%", "%25")
 	return fmt.Sprintf("%s://%s", u.Scheme, net.JoinHostPort(host, port)), nil
+}
+
+// sanitizeURLError drops the URL stored in *url.Error so malformed input cannot
+// leak credentials or query parameters through the wrapped parse error.
+func sanitizeURLError(err error) error {
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		return urlErr.Err
+	}
+	return err
 }
 
 func normalizeBaseURLInput(raw string) (string, error) {
@@ -428,14 +454,14 @@ func redactUserinfo(raw string) string {
 // strings are accepted (RFC 3986 ports contain no sign).
 func validatePort(port string) (string, error) {
 	if port == "" || port[0] < '0' || port[0] > '9' {
-		return "", fmt.Errorf("invalid port %q", port)
+		return "", errors.New("invalid port")
 	}
 	n, err := strconv.Atoi(port)
 	if err != nil {
-		return "", fmt.Errorf("invalid port %q: %w", port, err)
+		return "", errors.New("invalid port")
 	}
 	if n < 1 || n > 65535 {
-		return "", fmt.Errorf("port %q out of range (1-65535)", port)
+		return "", fmt.Errorf("port %d out of range (1-65535)", n)
 	}
 	return strconv.Itoa(n), nil
 }
@@ -451,6 +477,10 @@ func validatePort(port string) (string, error) {
 // drainLimitBytes so the connection can be reused when the drain consumed
 // the whole body; a larger remaining body forces the connection to close.
 func (c *Client) request(ctx context.Context, method, path string, body any, maxBytes int) ([]byte, string, error) {
+	if c == nil || c.client == nil {
+		return nil, "", errors.New("client is not initialized; use NewClient")
+	}
+
 	var reqBody io.Reader
 	if body != nil {
 		data, err := json.Marshal(body)
@@ -549,8 +579,11 @@ func (c *Client) requestInto(ctx context.Context, method, path string, body, out
 	return nil
 }
 
-func (c *Client) getInto(ctx context.Context, path string, out any, maxBytes int) error {
-	return c.requestInto(ctx, http.MethodGet, path, nil, out, maxBytes)
+func (c *Client) getInto(ctx context.Context, path string, out any) error {
+	if c == nil || c.client == nil {
+		return errors.New("client is not initialized; use NewClient")
+	}
+	return c.requestInto(ctx, http.MethodGet, path, nil, out, c.maxBodyBytes)
 }
 
 // post performs an HTTP POST and validates the success response. After
@@ -575,9 +608,18 @@ func (c *Client) post(ctx context.Context, path string, body any, expectedText s
 		}
 	}
 	if trimmed := strings.TrimSpace(string(bodyBytes)); trimmed != expectedText {
-		return fmt.Errorf("POST %s: unexpected response body %q, want %q", path, trimmed, expectedText)
+		return fmt.Errorf("POST %s: unexpected response body %q, want %q", path, truncateBody(trimmed), expectedText)
 	}
 	return nil
+}
+
+// truncateBody limits diagnostic response bodies embedded in errors.
+func truncateBody(body string) string {
+	const maxPreview = 256
+	if len(body) <= maxPreview {
+		return body
+	}
+	return body[:maxPreview] + "..."
 }
 
 // ---------------------------------------------------------------------------
@@ -587,7 +629,7 @@ func (c *Client) post(ctx context.Context, path string, body any, expectedText s
 // GetServerInfo returns general server information (version, name, GUID).
 func (c *Client) GetServerInfo(ctx context.Context) (*ServerInfo, error) {
 	var result ServerInfo
-	if err := c.getInto(ctx, "/info", &result, c.maxBodyBytes); err != nil {
+	if err := c.getInto(ctx, "/info", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -596,7 +638,7 @@ func (c *Client) GetServerInfo(ctx context.Context) (*ServerInfo, error) {
 // GetPlayerList returns the list of connected players.
 func (c *Client) GetPlayerList(ctx context.Context) (*PlayerList, error) {
 	var result PlayerList
-	if err := c.getInto(ctx, "/players", &result, c.maxBodyBytes); err != nil {
+	if err := c.getInto(ctx, "/players", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -605,7 +647,7 @@ func (c *Client) GetPlayerList(ctx context.Context) (*PlayerList, error) {
 // GetServerSettings returns the current server settings.
 func (c *Client) GetServerSettings(ctx context.Context) (*ServerSettings, error) {
 	var result ServerSettings
-	if err := c.getInto(ctx, "/settings", &result, c.maxBodyBytes); err != nil {
+	if err := c.getInto(ctx, "/settings", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -614,7 +656,7 @@ func (c *Client) GetServerSettings(ctx context.Context) (*ServerSettings, error)
 // GetServerMetrics returns the server performance metrics.
 func (c *Client) GetServerMetrics(ctx context.Context) (*ServerMetrics, error) {
 	var result ServerMetrics
-	if err := c.getInto(ctx, "/metrics", &result, c.maxBodyBytes); err != nil {
+	if err := c.getInto(ctx, "/metrics", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -626,7 +668,7 @@ func (c *Client) GetServerMetrics(ctx context.Context) (*ServerMetrics, error) {
 // WithMaxResponseBytes when needed.
 func (c *Client) GetGameData(ctx context.Context) (*GameData, error) {
 	var result GameData
-	if err := c.getInto(ctx, "/game-data", &result, c.maxBodyBytes); err != nil {
+	if err := c.getInto(ctx, "/game-data", &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

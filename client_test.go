@@ -2464,3 +2464,95 @@ func TestValidatePort_Empty(t *testing.T) {
 		t.Fatal("expected error for an empty port")
 	}
 }
+
+func TestNewClient_MalformedURLErrorsDoNotLeakSecrets(t *testing.T) {
+	inputs := []string{
+		"http://admin:SUPER_SECRET@127.0.0.1:abc",
+		"http://127.0.0.1:abc/path/SUPER_SECRET?token=SUPER_SECRET#SUPER_SECRET",
+		"::1:8212?token=SUPER_SECRET",
+	}
+	for _, input := range inputs {
+		t.Run(input, func(t *testing.T) {
+			_, err := NewClient(input, "password")
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			if strings.Contains(err.Error(), "SUPER_SECRET") {
+				t.Fatalf("error leaked a secret: %v", err)
+			}
+		})
+	}
+}
+
+func TestClient_FormatRedactsPasswordValueCopy(t *testing.T) {
+	client, err := NewClient("127.0.0.1:8212", "SUPER_SECRET")
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
+	value := *client
+	formatted := []string{
+		fmt.Sprintf("%v", client),
+		fmt.Sprintf("%+v", client),
+		fmt.Sprintf("%#v", client),
+		fmt.Sprintf("%v", value),
+		fmt.Sprintf("%+v", value),
+		fmt.Sprintf("%#v", value),
+	}
+	for _, got := range formatted {
+		if strings.Contains(got, "SUPER_SECRET") {
+			t.Fatalf("password leaked by formatting: %s", got)
+		}
+	}
+}
+
+func TestClient_ZeroValueReturnsError(t *testing.T) {
+	var value Client
+	if _, err := value.GetServerInfo(context.Background()); err == nil {
+		t.Fatal("expected an error from the zero-value client")
+	}
+
+	var pointer *Client
+	if _, err := pointer.GetServerInfo(context.Background()); err == nil {
+		t.Fatal("expected an error from a nil client")
+	}
+	if err := pointer.SaveServerState(context.Background()); err == nil {
+		t.Fatal("expected an error from a nil client")
+	}
+}
+
+func TestSanitizeURLError_NonURLError(t *testing.T) {
+	plain := errors.New("plain error")
+	if got := sanitizeURLError(plain); !errors.Is(got, plain) {
+		t.Fatalf("unexpected error: %v", got)
+	}
+}
+
+func TestRedactUserinfo_InvalidURL(t *testing.T) {
+	if got := redactUserinfo("http://[::1"); got != "[invalid base URL]" {
+		t.Fatalf("unexpected result: %s", got)
+	}
+}
+
+func TestClient_Post_TruncatesDivergentBody(t *testing.T) {
+	body := strings.Repeat("x", 300)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = io.WriteString(w, body)
+	}))
+	defer server.Close()
+
+	client, err := NewClient(server.URL, "secret")
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
+	err = client.MakeAnnouncement(context.Background(), "hello")
+	if err == nil {
+		t.Fatal("expected error for a divergent POST body")
+	}
+	if strings.Contains(err.Error(), body) {
+		t.Fatalf("error contains the full response body: %v", err)
+	}
+	if !strings.Contains(err.Error(), "...") {
+		t.Fatalf("expected a truncation marker: %v", err)
+	}
+}
