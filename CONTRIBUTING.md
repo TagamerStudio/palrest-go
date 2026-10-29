@@ -48,7 +48,8 @@ clearly justified.
 - Do not rename fixtures for game hotfixes without API changes; update
   [COMPATIBILITY.md](COMPATIBILITY.md) instead.
 - The weekly `Fuzz` workflow runs all fuzz targets and can be triggered from
-  Actions → Fuzz → Run workflow.
+  Actions → Fuzz → Run workflow. Targets are discovered with
+  `go test -list '^Fuzz'`, so new fuzz tests are picked up automatically.
 
 ## Code Conventions
 

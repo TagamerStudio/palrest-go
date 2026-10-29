@@ -2,9 +2,8 @@
 
 GOLANGCI_LINT_VERSION ?= v2.15.0
 GOLANGCI_LINT_CMD = go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
-GOFUMPT_VERSION ?= v0.7.0
-GOIMPORTS_VERSION ?= v0.30.0
-FUZZ_TARGETS = FuzzNormalizeBaseURL FuzzActorUnmarshalJSON FuzzDecodeResponseBody
+GOFUMPT_VERSION ?= v0.12.0
+GOIMPORTS_VERSION ?= v0.52.0
 
 test:
 	go test -count=1 -race -v ./...
@@ -16,8 +15,10 @@ vet:
 	go vet ./...
 
 fuzz:
-	for target in $(FUZZ_TARGETS); do \
-		go test -run=^$$ -fuzz=$$target -fuzztime=30s . || exit 1; \
+	@targets="$$(go test -list '^Fuzz' . | grep '^Fuzz')"; \
+	if [ -z "$$targets" ]; then echo "no fuzz targets found" >&2; exit 1; fi; \
+	for target in $$targets; do \
+		go test -run=^$$ -fuzz="^$$target$$" -fuzztime=30s . || exit 1; \
 	done
 
 fmt:
