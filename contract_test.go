@@ -31,6 +31,7 @@ type contractEndpoint struct {
 	responseContentType string
 	errorStatuses       []int
 	invoke              func(*Client) error
+	check               func(*testing.T, *Client)
 }
 
 func TestRESTContract_Success(t *testing.T) {
@@ -45,6 +46,9 @@ func TestRESTContract_Success(t *testing.T) {
 			}
 			if err := endpoint.invoke(client); err != nil {
 				t.Fatalf("endpoint failed: %v", err)
+			}
+			if endpoint.check != nil {
+				endpoint.check(t, client)
 			}
 		})
 	}
@@ -83,13 +87,22 @@ func assertContractError(t *testing.T, endpoint contractEndpoint, status int) {
 	if apiErr.StatusCode != status {
 		t.Fatalf("unexpected status: got %d, want %d", apiErr.StatusCode, status)
 	}
+	if apiErr.Method != endpoint.method {
+		t.Errorf("unexpected method: got %q, want %q", apiErr.Method, endpoint.method)
+	}
+	if apiErr.Path != endpoint.path {
+		t.Errorf("unexpected path: got %q, want %q", apiErr.Path, endpoint.path)
+	}
+	if apiErr.ResponseBody == nil {
+		t.Error("expected a decoded error response body")
+	}
 }
 
 func contractEndpoints(t *testing.T) []contractEndpoint {
 	t.Helper()
 
 	postResponses := readContractResponses(t)
-	return []contractEndpoint{
+	endpoints := []contractEndpoint{
 		{
 			name:                "info",
 			method:              http.MethodGet,
@@ -226,6 +239,62 @@ func contractEndpoints(t *testing.T) []contractEndpoint {
 			},
 		},
 	}
+
+	checks := map[string]func(*testing.T, *Client){
+		"info": func(t *testing.T, client *Client) {
+			got, err := client.GetServerInfo(context.Background())
+			if err != nil {
+				t.Fatalf("second request failed: %v", err)
+			}
+			assertContractResponse(t, got, "info.json")
+		},
+		"players": func(t *testing.T, client *Client) {
+			got, err := client.GetPlayerList(context.Background())
+			if err != nil {
+				t.Fatalf("second request failed: %v", err)
+			}
+			assertContractResponse(t, got, "players.json")
+		},
+		"settings": func(t *testing.T, client *Client) {
+			got, err := client.GetServerSettings(context.Background())
+			if err != nil {
+				t.Fatalf("second request failed: %v", err)
+			}
+			assertContractResponse(t, got, "settings.json")
+		},
+		"metrics": func(t *testing.T, client *Client) {
+			got, err := client.GetServerMetrics(context.Background())
+			if err != nil {
+				t.Fatalf("second request failed: %v", err)
+			}
+			assertContractResponse(t, got, "metrics.json")
+		},
+		"game-data": func(t *testing.T, client *Client) {
+			got, err := client.GetGameData(context.Background())
+			if err != nil {
+				t.Fatalf("second request failed: %v", err)
+			}
+			assertContractResponse(t, got, "game-data.json")
+		},
+	}
+	for i := range endpoints {
+		endpoints[i].check = checks[endpoints[i].name]
+	}
+	return endpoints
+}
+
+func assertContractResponse[T any](t *testing.T, got *T, fixture string) {
+	t.Helper()
+
+	var want T
+	decodeStrict(t, readContractFixture(t, fixture), &want)
+	var zero T
+	if reflect.DeepEqual(want, zero) {
+		t.Fatalf("fixture %s decoded to a zero value", fixture)
+	}
+	if !reflect.DeepEqual(*got, want) {
+		t.Fatalf("response mismatch for %s:\ngot:  %+v\nwant: %+v", fixture, *got, want)
+	}
 }
 
 func newContractServer(t *testing.T, endpoint contractEndpoint, status int) *httptest.Server {
@@ -246,6 +315,9 @@ func assertContractRequestMetadata(t *testing.T, endpoint contractEndpoint, r *h
 	}
 	if r.URL.Path != contractPrefix+endpoint.path {
 		t.Errorf("%s: path = %s, want %s", endpoint.name, r.URL.Path, contractPrefix+endpoint.path)
+	}
+	if r.URL.RawQuery != "" {
+		t.Errorf("%s: unexpected query string: %q", endpoint.name, r.URL.RawQuery)
 	}
 	username, password, ok := r.BasicAuth()
 	if !ok || username != contractUser || password != contractPassword {
@@ -294,6 +366,8 @@ func writeContractResponse(w http.ResponseWriter, endpoint contractEndpoint, sta
 	}
 	if endpoint.responseContentType != "" {
 		w.Header().Set("Content-Type", endpoint.responseContentType)
+	} else if endpoint.method == http.MethodPost {
+		w.Header().Set("Content-Type", "text/plain")
 	}
 	w.WriteHeader(http.StatusOK)
 	_, _ = io.WriteString(w, endpoint.responseBody)
@@ -304,13 +378,15 @@ func assertContractJSON(t *testing.T, name string, got, want []byte) {
 
 	var gotValue, wantValue any
 	if err := json.Unmarshal(got, &gotValue); err != nil {
-		t.Fatalf("%s: invalid JSON: %v", name, err)
+		t.Errorf("%s: invalid JSON: %v", name, err)
+		return
 	}
 	if err := json.Unmarshal(want, &wantValue); err != nil {
-		t.Fatalf("%s: invalid expected JSON: %v", name, err)
+		t.Errorf("%s: invalid expected JSON: %v", name, err)
+		return
 	}
 	if !reflect.DeepEqual(gotValue, wantValue) {
-		t.Fatalf("%s: got %s, want %s", name, got, want)
+		t.Errorf("%s: got %s, want %s", name, got, want)
 	}
 }
 

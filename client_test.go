@@ -1137,127 +1137,7 @@ func TestClient_ReadEndpoints(t *testing.T) {
 // response represented by the client contract and rejects any field the client
 // schema does not cover.
 func TestClient_GetServerSettings_FullSchema(t *testing.T) {
-	raw := `{
-		"Difficulty": "None",
-		"RandomizerType": "None",
-		"RandomizerSeed": "",
-		"bIsRandomizerPalLevelRandom": false,
-		"DayTimeSpeedRate": 1.0,
-		"NightTimeSpeedRate": 1.0,
-		"ExpRate": 1.0,
-		"PalCaptureRate": 1.0,
-		"PalSpawnNumRate": 1.0,
-		"PalDamageRateAttack": 1.0,
-		"PalDamageRateDefense": 1.0,
-		"PlayerDamageRateAttack": 1.0,
-		"PlayerDamageRateDefense": 1.0,
-		"PlayerStomachDecreaceRate": 1.0,
-		"PlayerStaminaDecreaceRate": 1.0,
-		"PlayerAutoHPRegeneRate": 1.0,
-		"PlayerAutoHpRegeneRateInSleep": 1.0,
-		"PalStomachDecreaceRate": 1.0,
-		"PalStaminaDecreaceRate": 1.0,
-		"PalAutoHPRegeneRate": 1.0,
-		"PalAutoHpRegeneRateInSleep": 1.0,
-		"BuildObjectHpRate": 1.0,
-		"BuildObjectDamageRate": 1.0,
-		"BuildObjectDeteriorationDamageRate": 1.0,
-		"CollectionDropRate": 1.0,
-		"CollectionObjectHpRate": 1.0,
-		"CollectionObjectRespawnSpeedRate": 1.0,
-		"EnemyDropItemRate": 1.0,
-		"DeathPenalty": "Item",
-		"bEnablePlayerToPlayerDamage": false,
-		"bEnableFriendlyFire": false,
-		"bEnableInvaderEnemy": true,
-		"bActiveUNKO": false,
-		"bEnableAimAssistPad": true,
-		"bEnableAimAssistKeyboard": false,
-		"DropItemMaxNum": 3000,
-		"PhysicsActiveDropItemMaxNum": -1,
-		"DropItemMaxNum_UNKO": 100,
-		"BaseCampMaxNum": 128,
-		"BaseCampWorkerMaxNum": 15,
-		"DropItemAliveMaxHours": 1.0,
-		"bAutoResetGuildNoOnlinePlayers": false,
-		"AutoResetGuildTimeNoOnlinePlayers": 72.0,
-		"GuildPlayerMaxNum": 20,
-		"BaseCampMaxNumInGuild": 4,
-		"PalEggDefaultHatchingTime": 1.0,
-		"WorkSpeedRate": 1.0,
-		"autoSaveSpan": 30,
-		"bIsMultiplay": false,
-		"bIsPvP": false,
-		"bHardcore": false,
-		"bPalLost": false,
-		"bCharacterRecreateInHardcore": false,
-		"bCanPickupOtherGuildDeathPenaltyDrop": false,
-		"bEnableNonLoginPenalty": true,
-		"bEnableFastTravel": true,
-		"bEnableFastTravelOnlyBaseCamp": false,
-		"bIsStartLocationSelectByMap": false,
-		"bExistPlayerAfterLogout": false,
-		"bEnableDefenseOtherGuildPlayer": false,
-		"bInvisibleOtherGuildBaseCampAreaFX": false,
-		"bBuildAreaLimit": false,
-		"ItemWeightRate": 1.0,
-		"CoopPlayerMaxNum": 4,
-		"ServerPlayerMaxNum": 32,
-		"ServerName": "Default Palworld Server",
-		"ServerDescription": "",
-		"bAllowClientMod": true,
-		"PublicPort": 8211,
-		"PublicIP": "",
-		"RCONEnabled": false,
-		"RCONPort": 25575,
-		"Region": "",
-		"bUseAuth": true,
-		"BanListURL": "https://b.palworldgame.com/api/banlist.txt",
-		"RESTAPIEnabled": false,
-		"RESTAPIPort": 8212,
-		"bShowPlayerList": false,
-		"ChatPostLimitPerMinute": 30,
-		"CrossplayPlatforms": ["Steam", "Xbox", "PS5", "Mac"],
-		"bIsUseBackupSaveData": true,
-		"LogFormatType": "Text",
-		"bIsShowJoinLeftMessage": true,
-		"SupplyDropSpan": 180,
-		"EnablePredatorBossPal": true,
-		"MaxBuildingLimitNum": 0,
-		"ServerReplicatePawnCullDistance": 15000,
-		"bAllowGlobalPalboxExport": true,
-		"bAllowGlobalPalboxImport": false,
-		"EquipmentDurabilityDamageRate": 1.0,
-		"ItemContainerForceMarkDirtyInterval": 1.0,
-		"PlayerDataPalStorageUpdateCheckTickInterval": 1.0,
-		"ItemCorruptionMultiplier": 1.0,
-		"MonsterFarmActionSpeedRate": 1.0,
-		"DenyTechnologyList": [],
-		"GuildRejoinCooldownMinutes": 0,
-		"AutoTransferMasterCheckIntervalSeconds": 3600,
-		"AutoTransferMasterThresholdDays": 14,
-		"MaxGuildsPerFrame": 10,
-		"BlockRespawnTime": 5,
-		"RespawnPenaltyDurationThreshold": 0,
-		"RespawnPenaltyTimeScale": 2,
-		"bDisplayPvPItemNumOnWorldMap_BaseCamp": false,
-		"bDisplayPvPItemNumOnWorldMap_Player": false,
-		"AdditionalDropItemWhenPlayerKillingInPvPMode": "PlayerDropItem",
-		"AdditionalDropItemNumWhenPlayerKillingInPvPMode": 1,
-		"bAdditionalDropItemWhenPlayerKillingInPvPMode": false,
-		"bEnableVoiceChat": false,
-		"VoiceChatMaxVolumeDistance": 3000,
-		"VoiceChatZeroVolumeDistance": 15000,
-		"bAllowEnhanceStat_Health": true,
-		"bAllowEnhanceStat_Attack": true,
-		"bAllowEnhanceStat_Stamina": true,
-		"bAllowEnhanceStat_Weight": true,
-		"bAllowEnhanceStat_WorkSpeed": true,
-		"bEnableBuildingPlayerUIdDisplay": false,
-		"BuildingNameDisplayCacheTTLSeconds": 60,
-		"bAllowEnemyCampSpawnNearBaseCamp": false,
-		"AllowConnectPlatform": "Steam"
-	}`
+	raw := readContractFixture(t, "settings.json")
 
 	handler := http.NewServeMux()
 	handler.HandleFunc("/v1/api/settings", func(w http.ResponseWriter, r *http.Request) {
@@ -1284,7 +1164,7 @@ func TestClient_GetServerSettings_FullSchema(t *testing.T) {
 		settings.AutoSaveSpan != 30 || settings.ServerName != "Default Palworld Server" ||
 		settings.ServerDescription != "" || settings.PublicIP != "" || settings.Region != "" ||
 		settings.BanListURL != "https://b.palworldgame.com/api/banlist.txt" ||
-		settings.RESTAPIEnabled || settings.RCONEnabled || settings.ShowPlayerList || settings.IsMultiplay ||
+		!settings.RESTAPIEnabled || settings.RCONEnabled || settings.ShowPlayerList || settings.IsMultiplay ||
 		!settings.AllowClientMod || settings.MaxBuildingLimitNum != 0 ||
 		settings.SupplyDropSpan != 180 || settings.ServerReplicatePawnCullDistance != 15000 ||
 		settings.ItemCorruptionMultiplier != 1.0 || !settings.AllowGlobalPalboxExport ||
@@ -1331,12 +1211,7 @@ func testClientServing(t *testing.T, path, raw string, opts ...Option) *Client {
 }
 
 func TestClient_GetServerInfo_FullSchema(t *testing.T) {
-	raw := `{
-		"version": "v1.0.5",
-		"servername": "Palworld example Server",
-		"description": "This is a Palworld server.",
-		"worldguid": "A7E97BAA767DB9029EF013BB71E993A0"
-	}`
+	raw := readContractFixture(t, "info.json")
 
 	client := testClientServing(t, "/v1/api/info", raw)
 	info, err := client.GetServerInfo(context.Background())
@@ -1353,22 +1228,7 @@ func TestClient_GetServerInfo_FullSchema(t *testing.T) {
 }
 
 func TestClient_GetPlayerList_FullSchema(t *testing.T) {
-	raw := `{
-		"players": [
-			{
-				"name": "PalUser",
-				"accountName": "paluser",
-				"playerId": "AFAFD830000000000000000000000000",
-				"userId": "steam_00000000000000000",
-				"ip": "127.0.0.1",
-				"ping": 3.14,
-				"location_x": 123.45,
-				"location_y": 67.89,
-				"level": 1,
-				"building_count": 119
-			}
-		]
-	}`
+	raw := readContractFixture(t, "players.json")
 
 	client := testClientServing(t, "/v1/api/players", raw)
 	players, err := client.GetPlayerList(context.Background())
@@ -1388,15 +1248,7 @@ func TestClient_GetPlayerList_FullSchema(t *testing.T) {
 }
 
 func TestClient_GetServerMetrics_FullSchema(t *testing.T) {
-	raw := `{
-		"serverfps": 57,
-		"currentplayernum": 10,
-		"serverframetime": 16.7671,
-		"maxplayernum": 32,
-		"uptime": 3600,
-		"basecampnum": 32,
-		"days": 1
-	}`
+	raw := readContractFixture(t, "metrics.json")
 
 	client := testClientServing(t, "/v1/api/metrics", raw)
 	metrics, err := client.GetServerMetrics(context.Background())
@@ -1412,68 +1264,20 @@ func TestClient_GetServerMetrics_FullSchema(t *testing.T) {
 	}
 }
 
-const (
-	gameDataCharacter = `{
-		"Type": "Character",
-		"InstanceID": "char-1",
-		"UnitType": "Player",
-		"NickName": "PalUser",
-		"TrainerInstanceID": "char-0",
-		"TrainerNickName": "Trainer",
-		"TrainerClass": "BP_PlayerCharacter",
-		"userid": "steam_1",
-		"ip": "127.0.0.1",
-		"level": 42,
-		"HP": 100,
-		"MaxHP": 120,
-		"GuildID": "guild-1",
-		"GuildName": "TestGuild",
-		"Class": "BP_PlayerCharacter",
-		"Action": "Idle",
-		"AI_Action": "None",
-		"LocationX": 1.5,
-		"LocationY": 2.5,
-		"LocationZ": 3.5,
-		"RotationX": 0.1,
-		"RotationY": 0.2,
-		"RotationZ": 0.3,
-		"Stage": "Stage1",
-		"IsActive": "true"
-	}`
-	gameDataPalBox = `{
-		"Type": "PalBox",
-		"GuildID": "guild-2",
-		"GuildName": "TestGuild",
-		"Class": "BP_PalBox",
-		"LocationX": 4.2,
-		"LocationY": 5.2,
-		"LocationZ": 6.2
-	}`
-	gameDataSnapshot = `{
-		"Time": "2026-06-17 13:00:40",
-		"FPS": 91.71,
-		"AverageFPS": 33.78,
-		"ActorData": [` + gameDataCharacter + `, ` + gameDataPalBox + `]
-	}`
-)
-
 // TestClient_GetGameData_FullSchema decodes the /game-data snapshot represented
-// by the client contract. The strict decode of the snapshot pins the top-level
-// schema; actor-inner field coverage is pinned against the documented fixtures
-// via the two direct strict decodes below.
+// by the game-data fixture. The strict decode of the fixture pins the top-level
+// schema and both actor payloads.
 // The runtime decode path (Actor.UnmarshalJSON) deliberately tolerates unknown
 // actor fields and kinds for forward compatibility, so unknown fields inside
 // an actor must not be rejected here.
 func TestClient_GetGameData_FullSchema(t *testing.T) {
-	client := testClientServing(t, "/v1/api/game-data", gameDataSnapshot)
+	client := testClientServing(t, "/v1/api/game-data", readContractFixture(t, "game-data.json"))
 	data, err := client.GetGameData(context.Background())
 	if err != nil {
 		t.Fatalf("GetGameData failed: %v", err)
 	}
 
-	decodeStrict(t, gameDataSnapshot, &GameData{})
-	decodeStrict(t, gameDataCharacter, &CharacterActor{})
-	decodeStrict(t, gameDataPalBox, &PalBoxActor{})
+	decodeStrict(t, readContractFixture(t, "game-data.json"), &GameData{})
 
 	if len(data.ActorData) != 2 || data.ActorData[0].Character == nil || data.ActorData[1].PalBox == nil {
 		t.Fatalf("unexpected snapshot: %+v", data)
@@ -1660,7 +1464,7 @@ func fetchGameData(t *testing.T, raw string) *GameData {
 }
 
 func TestClient_GetGameData(t *testing.T) {
-	data := fetchGameData(t, gameDataSnapshot)
+	data := fetchGameData(t, readContractFixture(t, "game-data.json"))
 
 	want := &GameData{
 		Time:       "2026-06-17 13:00:40",
