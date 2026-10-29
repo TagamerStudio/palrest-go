@@ -29,4 +29,6 @@ one logical change per commit, `make check` before committing.
 ## Versioning
 
 Published with semver tags (currently `v0.3.2`). Breaking changes bump the
-minor version while on `v0.x`.
+minor version while on `v0.x`. Compatibility with Palworld game versions is
+documented in `COMPATIBILITY.md`; the library version is independent of the
+game version.

@@ -20,7 +20,8 @@ The reference version is not the server version returned by `/info`; endpoint
 availability can vary across game versions. `/game-data` additionally requires
 launching the server with `-enable-gamedata-api`. Some server builds return
 more `/settings` entries than the API reference documents; `ServerSettings`
-covers the documented schema plus observed fields and ignores unknown ones.
+covers the documented schema plus observed fields and ignores unknown ones. See
+[COMPATIBILITY.md](COMPATIBILITY.md) for the compatibility policy.
 
 ## Install
 

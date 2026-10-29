@@ -45,6 +45,8 @@ clearly justified.
   version and observed fields in the fixture README. Update
   `contractGameVersion` and `contractEndpoints` in `contract_test.go` when the
   schema changes, and keep old fixtures unless they are intentionally dropped.
+- Do not rename fixtures for game hotfixes without API changes; update
+  [COMPATIBILITY.md](COMPATIBILITY.md) instead.
 
 ## Code Conventions
 

@@ -8,6 +8,15 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+### Added
+- Compatibility policy in `COMPATIBILITY.md` tracking Palworld game versions.
+- Fixture provenance notes in `testdata/contract/v1.0.5/README.md`.
+
+### Changed
+- Contract fixtures now follow the Palworld game version (`v1.0.5`); the REST
+  API reference (`1.0.4`) is recorded as the schema source.
+- Keep fields observed on game servers but absent from the reference.
+
 ### Fixed
 - Bump `govulncheck` to v1.9.0 so vulnerability scanning works with Go 1.27.
 

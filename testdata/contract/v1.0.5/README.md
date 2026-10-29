@@ -8,4 +8,4 @@
 - Payload values are illustrative, not a live capture.
 
 When a game release changes the API, add a new versioned directory and update
-the compatibility documentation.
+`COMPATIBILITY.md`.

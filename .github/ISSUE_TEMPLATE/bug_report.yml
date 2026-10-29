@@ -29,7 +29,7 @@ body:
     attributes:
       label: Palworld server version
       description: Version reported by /v1/api/info, when available.
-      placeholder: v0.3.12.0
+      placeholder: v1.0.5
     validations:
       required: false
   - type: input
