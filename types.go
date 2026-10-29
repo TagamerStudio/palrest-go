@@ -191,8 +191,9 @@ type GameData struct {
 // Actor is a single actor in the world snapshot. The server returns a
 // discriminated union of Character and PalBox kinds (see CharacterActor and
 // PalBoxActor); UnmarshalJSON populates the pointer matching the Type
-// discriminator. Actor kinds introduced by future server versions keep Type
-// set with both pointers nil.
+// discriminator. MarshalJSON emits the same flat representation, so decoded
+// actors can be serialized and decoded again. Actor kinds introduced by future
+// server versions keep Type set with both pointers nil.
 type Actor struct {
 	Type      string          `json:"Type"`
 	Character *CharacterActor `json:"Character,omitempty"`
@@ -240,6 +241,42 @@ type PalBoxActor struct {
 	LocationX float64 `json:"LocationX"`
 	LocationY float64 `json:"LocationY"`
 	LocationZ float64 `json:"LocationZ"`
+}
+
+// MarshalJSON emits the flat API representation selected by Type. A zero Actor
+// marshals as JSON null, matching the accepted null actor entry.
+func (a Actor) MarshalJSON() ([]byte, error) {
+	if a.Type == "" && a.Character == nil && a.PalBox == nil {
+		return []byte("null"), nil
+	}
+	switch a.Type {
+	case "Character":
+		if a.Character == nil {
+			return json.Marshal(struct {
+				Type string `json:"Type"`
+			}{Type: a.Type})
+		}
+		payload := *a.Character
+		if payload.Type == "" {
+			payload.Type = a.Type
+		}
+		return json.Marshal(payload)
+	case "PalBox":
+		if a.PalBox == nil {
+			return json.Marshal(struct {
+				Type string `json:"Type"`
+			}{Type: a.Type})
+		}
+		payload := *a.PalBox
+		if payload.Type == "" {
+			payload.Type = a.Type
+		}
+		return json.Marshal(payload)
+	default:
+		return json.Marshal(struct {
+			Type string `json:"Type"`
+		}{Type: a.Type})
+	}
 }
 
 // UnmarshalJSON decodes the actor payload and populates the pointer matching
