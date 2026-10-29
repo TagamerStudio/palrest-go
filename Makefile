@@ -21,11 +21,9 @@ fuzz:
 	done
 
 fmt:
-	go install mvdan.cc/gofumpt@$(GOFUMPT_VERSION)
-	go install golang.org/x/tools/cmd/goimports@$(GOIMPORTS_VERSION)
 	gofmt -s -w .
-	$(shell go env GOPATH)/bin/goimports -w .
-	$(shell go env GOPATH)/bin/gofumpt -w .
+	go run golang.org/x/tools/cmd/goimports@$(GOIMPORTS_VERSION) -w .
+	go run mvdan.cc/gofumpt@$(GOFUMPT_VERSION) -w .
 
 tidy:
 	go mod tidy
