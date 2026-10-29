@@ -47,6 +47,8 @@ clearly justified.
   schema changes, and keep old fixtures unless they are intentionally dropped.
 - Do not rename fixtures for game hotfixes without API changes; update
   [COMPATIBILITY.md](COMPATIBILITY.md) instead.
+- The weekly `Fuzz` workflow runs all fuzz targets and can be triggered from
+  Actions → Fuzz → Run workflow.
 
 ## Code Conventions
 
@@ -84,6 +86,27 @@ version and be documented.
 - Include tests and documentation updates in the same PR.
 - Note user-visible changes so they can be added to `CHANGELOG.md` at release.
 - Make sure CI is green before requesting review.
+
+## Releases
+
+Releases are cut from `main` by a maintainer:
+
+1. Update `CHANGELOG.md`, the current version in `AGENTS.md`, and
+   `COMPATIBILITY.md` when the targeted Palworld version changes.
+2. Run `make check`.
+3. Commit as `chore: release vX.Y.Z` and push `main`.
+4. Wait for CI to pass on the release commit.
+5. Create an annotated tag and push it:
+
+   ```bash
+   git tag -a vX.Y.Z -m "vX.Y.Z"
+   git push origin vX.Y.Z
+   ```
+
+6. The Release workflow validates the tag and changelog, then publishes the
+   GitHub release.
+
+Never move or recreate a published tag.
 
 ## Security
 
