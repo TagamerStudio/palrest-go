@@ -17,6 +17,7 @@ jobs:
   ci:
     name: Lint and Test (Go ${{ matrix.go }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -41,19 +42,20 @@ jobs:
         run: echo '```' >> "$GITHUB_STEP_SUMMARY" && go tool cover -func=coverage.out >> "$GITHUB_STEP_SUMMARY" && echo '```' >> "$GITHUB_STEP_SUMMARY"
       - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7
         if: >-
-          ${{ !cancelled()
+          ${{ success()
               && matrix.go == '1.27.x'
               && (github.event_name == 'push'
                   || github.event.pull_request.head.repo.full_name == github.repository) }}
         with:
           files: coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
-          version: v11.3.1
-          fail_ci_if_error: false
+          version: v11.3.2
+          fail_ci_if_error: true
 
   govulncheck:
     name: Vulnerability scan
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -70,6 +72,7 @@ jobs:
   tip:
     name: Test (Go tip)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     continue-on-error: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -91,3 +94,17 @@ jobs:
           echo "$RUNNER_TEMP/gotip/bin" >> "$GITHUB_PATH"
       - run: go version
       - run: go test -count=1 -race ./...
+
+  ci-success:
+    name: CI success
+    if: always()
+    needs: [ci, govulncheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check required CI jobs
+        run: |
+          if [[ "${{ needs.ci.result }}" != "success" || "${{ needs.govulncheck.result }}" != "success" ]]; then
+            echo "required CI jobs did not succeed" >&2
+            exit 1
+          fi
