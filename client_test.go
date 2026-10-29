@@ -2337,6 +2337,145 @@ func TestRedactUserinfo_InvalidURL(t *testing.T) {
 	}
 }
 
+func TestClient_TLSVerification(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"version":"v1.0.5","servername":"tls"}`)
+	}))
+	defer server.Close()
+
+	defaultClient, err := NewClient(server.URL, "secret")
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
+	if _, err := defaultClient.GetServerInfo(context.Background()); err == nil {
+		t.Fatal("expected the default client to reject the self-signed certificate")
+	}
+
+	injected, err := NewClient(server.URL, "secret", WithHTTPClient(server.Client()))
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
+	if _, err := injected.GetServerInfo(context.Background()); err != nil {
+		t.Fatalf("injected TLS client failed: %v", err)
+	}
+}
+
+func TestClient_ContextCancellation(t *testing.T) {
+	started := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		close(started)
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+
+	client, err := NewClient(server.URL, "secret")
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		<-started
+		cancel()
+	}()
+	if _, err := client.GetServerInfo(ctx); !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected context cancellation, got %v", err)
+	}
+}
+
+func TestClient_ConcurrentRequests(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"version":"v1.0.5","servername":"concurrent"}`)
+	}))
+	defer server.Close()
+
+	client, err := NewClient(server.URL, "secret")
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
+
+	const workers = 20
+	errs := make(chan error, workers)
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err := client.GetServerInfo(context.Background())
+			errs <- err
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatalf("concurrent request failed: %v", err)
+		}
+	}
+}
+
+func TestClient_CloseIdempotentAndReusable(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"version":"v1.0.5"}`)
+	}))
+	defer server.Close()
+
+	client, err := NewClient(server.URL, "secret")
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
+	if err := client.Close(); err != nil {
+		t.Fatalf("first Close failed: %v", err)
+	}
+	if err := client.Close(); err != nil {
+		t.Fatalf("second Close failed: %v", err)
+	}
+	if _, err := client.GetServerInfo(context.Background()); err != nil {
+		t.Fatalf("request after Close failed: %v", err)
+	}
+}
+
+func TestClient_WithMaxResponseBytesNonPositive(t *testing.T) {
+	client, err := NewClient("127.0.0.1:1", "secret", WithMaxResponseBytes(0), WithMaxResponseBytes(-1))
+	if err != nil {
+		t.Fatalf("NewClient failed: %v", err)
+	}
+	if client.maxBodyBytes != maxResponseBytes {
+		t.Fatalf("unexpected limit: %d", client.maxBodyBytes)
+	}
+}
+
+func TestNewClient_PortBoundaries(t *testing.T) {
+	for _, raw := range []string{"127.0.0.1:1", "127.0.0.1:65535"} {
+		if _, err := NewClient(raw, "secret"); err != nil {
+			t.Fatalf("port boundary %q rejected: %v", raw, err)
+		}
+	}
+	for _, raw := range []string{"127.0.0.1:0", "127.0.0.1:65536"} {
+		if _, err := NewClient(raw, "secret"); err == nil {
+			t.Fatalf("port boundary %q accepted", raw)
+		}
+	}
+}
+
+func TestClient_GetServerSettings_ToleratesUnknownAndMissingFields(t *testing.T) {
+	client := testClientServing(t, "/v1/api/settings", `{"ServerName":"x","UnknownField":1}`)
+	settings, err := client.GetServerSettings(context.Background())
+	if err != nil {
+		t.Fatalf("GetServerSettings failed: %v", err)
+	}
+	if settings.ServerName != "x" {
+		t.Fatalf("unexpected settings: %+v", settings)
+	}
+
+	client = testClientServing(t, "/v1/api/settings", `{}`)
+	if _, err := client.GetServerSettings(context.Background()); err != nil {
+		t.Fatalf("empty object should decode as zero values: %v", err)
+	}
+}
+
 func TestClient_Post_TruncatesDivergentBody(t *testing.T) {
 	body := strings.Repeat("x", 300)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
