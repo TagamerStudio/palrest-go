@@ -1,0 +1,39 @@
+name: Go tip
+
+on:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tip-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (Go tip)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: "1.27.x"
+          cache: true
+      - name: Build Go tip
+        run: |
+          git init "$RUNNER_TEMP/gotip"
+          git -C "$RUNNER_TEMP/gotip" remote add origin https://go.googlesource.com/go
+          git -C "$RUNNER_TEMP/gotip" fetch --depth=1 origin master
+          git -C "$RUNNER_TEMP/gotip" checkout --detach FETCH_HEAD
+          cd "$RUNNER_TEMP/gotip/src"
+          ./make.bash
+          echo "GOROOT=$RUNNER_TEMP/gotip" >> "$GITHUB_ENV"
+          echo "$RUNNER_TEMP/gotip/bin" >> "$GITHUB_PATH"
+      - run: go version
+      - run: go test -count=1 -race ./...

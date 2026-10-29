@@ -15,7 +15,7 @@ concurrency:
 jobs:
   validate:
     name: Validate release (Go ${{ matrix.go }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -77,7 +77,7 @@ jobs:
   release:
     name: Publish GitHub release
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write
