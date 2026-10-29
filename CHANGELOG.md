@@ -8,6 +8,16 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+### Added
+- `scripts/capture-contract.sh` for capturing GET fixtures from a live server.
+
+### Changed
+- CI enforces 100% project coverage, discovers fuzz targets dynamically,
+  uploads failing corpora, and adds CodeQL and actionlint.
+- The Go tip test moved to a weekly workflow outside the pull request gate.
+- Updated the pinned `gofumpt` and `goimports` versions.
+- Document that `main` requires a pull request and `CI success`.
+
 ## [0.3.3] - 2026-10-29
 
 ### Added
