@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	contractVersion  = "v1.0.4"
-	contractPrefix   = "/v1/api"
-	contractUser     = "admin"
-	contractPassword = "contract-password"
+	contractGameVersion = "v1.0.5"
+	contractPrefix      = "/v1/api"
+	contractUser        = "admin"
+	contractPassword    = "contract-password"
 )
 
 type contractEndpoint struct {
@@ -33,8 +33,8 @@ type contractEndpoint struct {
 	invoke              func(*Client) error
 }
 
-func TestDocumentedRESTContract_Success(t *testing.T) {
-	for _, endpoint := range documentedContractEndpoints(t) {
+func TestRESTContract_Success(t *testing.T) {
+	for _, endpoint := range contractEndpoints(t) {
 		t.Run(endpoint.name, func(t *testing.T) {
 			server := newContractServer(t, endpoint, http.StatusOK)
 			defer server.Close()
@@ -50,8 +50,8 @@ func TestDocumentedRESTContract_Success(t *testing.T) {
 	}
 }
 
-func TestDocumentedRESTContract_ErrorStatuses(t *testing.T) {
-	for _, endpoint := range documentedContractEndpoints(t) {
+func TestRESTContract_ErrorStatuses(t *testing.T) {
+	for _, endpoint := range contractEndpoints(t) {
 		for _, status := range endpoint.errorStatuses {
 			status := status
 			t.Run(fmt.Sprintf("%s/%d", endpoint.name, status), func(t *testing.T) {
@@ -85,7 +85,7 @@ func assertContractError(t *testing.T, endpoint contractEndpoint, status int) {
 	}
 }
 
-func documentedContractEndpoints(t *testing.T) []contractEndpoint {
+func contractEndpoints(t *testing.T) []contractEndpoint {
 	t.Helper()
 
 	postResponses := readContractResponses(t)
@@ -317,7 +317,7 @@ func assertContractJSON(t *testing.T, name string, got, want []byte) {
 func readContractFixture(t *testing.T, name string) string {
 	t.Helper()
 
-	path := filepath.Join("testdata", "contract", contractVersion, name)
+	path := filepath.Join("testdata", "contract", contractGameVersion, name)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read contract fixture %s: %v", path, err)

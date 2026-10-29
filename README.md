@@ -14,13 +14,13 @@ kick, ban, unban, save, shutdown and stop. All endpoint methods take a
 
 Enable the server REST API with `RESTAPIEnabled=True` and expose its
 `RESTAPIPort`. When the port is omitted from `baseURL`, the client assumes
-`8212`. The contract fixtures in this repository target version `1.0.4` of the
-official REST API reference. This is the API documentation version, not the
-server version returned by `/info`; endpoint availability can vary across
-server versions. `/game-data` additionally requires launching the server with
-`-enable-gamedata-api`. Some server builds return more `/settings` entries
-than the API reference documents; `ServerSettings` covers the documented
-schema plus observed fields and ignores unknown ones.
+`8212`. Compatibility is tracked by Palworld game version (currently `v1.0.5`);
+the fixtures use the official REST API reference `1.0.4` as their schema source.
+The reference version is not the server version returned by `/info`; endpoint
+availability can vary across game versions. `/game-data` additionally requires
+launching the server with `-enable-gamedata-api`. Some server builds return
+more `/settings` entries than the API reference documents; `ServerSettings`
+covers the documented schema plus observed fields and ignores unknown ones.
 
 ## Install
 

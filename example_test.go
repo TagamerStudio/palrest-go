@@ -14,7 +14,7 @@ import (
 func ExampleClient_GetServerInfo() {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = fmt.Fprint(w, `{"version":"v0.1.5.0","servername":"Example Server","worldguid":"A7E97BAA"}`)
+		_, _ = fmt.Fprint(w, `{"version":"v1.0.5","servername":"Example Server","worldguid":"A7E97BAA"}`)
 	}))
 	defer srv.Close()
 
@@ -31,7 +31,7 @@ func ExampleClient_GetServerInfo() {
 		return
 	}
 	fmt.Printf("%s runs version %s", info.ServerName, info.Version)
-	// Output: Example Server runs version v0.1.5.0
+	// Output: Example Server runs version v1.0.5
 }
 
 func ExampleClient_MakeAnnouncement() {

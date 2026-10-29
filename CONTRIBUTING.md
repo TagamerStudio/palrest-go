@@ -40,10 +40,11 @@ clearly justified.
 - Put tests in `*_test.go` files next to the code they cover.
 - New behavior needs tests; bug fixes should include a regression test.
 - Fuzz seeds live in `fuzz_test.go`. Add seeds for new parsing edge cases.
-- The REST contract fixtures live in `testdata/contract/<api-version>/`. When
-  the official API reference changes, add the new versioned fixtures, update
-  `contractVersion` and `documentedContractEndpoints` in `contract_test.go`, and
-  keep the old fixtures unless they are intentionally dropped.
+- The REST contract fixtures live in `testdata/contract/<palworld-version>/`
+  and are named after the Palworld game version. Record the REST API reference
+  version and observed fields in the fixture README. Update
+  `contractGameVersion` and `contractEndpoints` in `contract_test.go` when the
+  schema changes, and keep old fixtures unless they are intentionally dropped.
 
 ## Code Conventions
 

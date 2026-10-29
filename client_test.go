@@ -1332,7 +1332,7 @@ func testClientServing(t *testing.T, path, raw string, opts ...Option) *Client {
 
 func TestClient_GetServerInfo_FullSchema(t *testing.T) {
 	raw := `{
-		"version": "v0.1.5.0",
+		"version": "v1.0.5",
 		"servername": "Palworld example Server",
 		"description": "This is a Palworld server.",
 		"worldguid": "A7E97BAA767DB9029EF013BB71E993A0"
@@ -1346,7 +1346,7 @@ func TestClient_GetServerInfo_FullSchema(t *testing.T) {
 
 	decodeStrict(t, raw, &ServerInfo{})
 
-	if info.Version != "v0.1.5.0" || info.ServerName != "Palworld example Server" ||
+	if info.Version != "v1.0.5" || info.ServerName != "Palworld example Server" ||
 		info.Description != "This is a Palworld server." || info.WorldGUID != "A7E97BAA767DB9029EF013BB71E993A0" {
 		t.Fatalf("unexpected info: %+v", info)
 	}
