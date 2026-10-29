@@ -31,7 +31,9 @@ go get github.com/TagamerStudio/palrest-go
 ```
 
 Requires Go 1.26 or newer. The module path is case-sensitive: import it exactly
-as `github.com/TagamerStudio/palrest-go`.
+as `github.com/TagamerStudio/palrest-go`. The former
+`github.com/tagamer-net/palrest-go` path is frozen at `v0.2.1`; use the
+TagamerStudio path for `v0.3.0` and newer.
 
 ## Usage
 
@@ -116,8 +118,10 @@ The Palworld REST API is plain HTTP with basic auth: the admin password is
 sent base64-encoded, which is **not** encrypted. The official documentation
 recommends using the API on LAN only. For any access beyond a trusted LAN,
 terminate TLS with a reverse proxy (e.g., Caddy or nginx) in front of the
-server and pass the `https://` URL to `NewClient`. The internally created
-client uses standard TLS certificate verification by default. `WithHTTPClient`
+server and pass the `https://` URL to `NewClient`. The default port remains
+`8212` for both schemes; include `:443` when the proxy listens on port 443. The
+internally created client uses standard TLS certificate verification by default.
+`WithHTTPClient`
 is a full transport escape hatch: the injected client's timeout, redirect,
 proxy and TLS policies are caller-controlled and must be configured safely. See
 [SECURITY.md](SECURITY.md) for supported versions and private vulnerability
@@ -144,7 +148,9 @@ error body produces a nil `ResponseBody`; non-JSON bodies are kept as trimmed
 text. Treat `ResponseBody` as diagnostic data rather than a stable schema.
 Transport and response-decoding failures are returned as ordinary errors, not
 `*APIError`. GET responses with an empty or JSON-`null` body are treated as
-protocol errors. POST success responses must match the documented plain-text
+protocol errors. A syntactically valid JSON object with missing fields is
+decoded with zero values; the client does not enforce endpoint-specific
+required fields. POST success responses must match the documented plain-text
 confirmation after surrounding whitespace is trimmed (`/announce` -> "The
 message was announced.", `/kick` -> "The player was kicked.", `/ban` -> "The
 player was banned.", `/unban` -> "The player was unbanned.", `/save` ->

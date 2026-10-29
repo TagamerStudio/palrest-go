@@ -34,7 +34,7 @@ body:
     attributes:
       label: Checklist
       options:
-        - label: I searched existing issues and discussions before opening this request.
+        - label: I searched existing issues before opening this request.
           required: true
         - label: This request is about the palrest-go client, not the Palworld server itself.
           required: true

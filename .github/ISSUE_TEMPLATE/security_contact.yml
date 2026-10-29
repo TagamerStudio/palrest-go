@@ -1,0 +1,17 @@
+name: Security contact request
+description: Request a private channel for a security report without disclosing details publicly.
+title: "[Security contact]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include vulnerability details, the Palworld admin password,
+        server addresses, player data or other secrets in this issue.
+        A maintainer will provide a private reporting channel.
+  - type: input
+    id: contact
+    attributes:
+      label: Preferred private contact
+      description: How can a maintainer reach you privately?
+    validations:
+      required: true

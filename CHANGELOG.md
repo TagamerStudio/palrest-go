@@ -120,11 +120,13 @@ while on `v0.x`, breaking changes bump the minor version.
 ### Added
 - Full decoding of the `/settings` response schema (`ServerSettings`).
 
-## [0.1.3] - 2026-08-04
-
 ### Fixed
 - POST endpoint responses are validated against the exact plain-text
   confirmation documented for each endpoint instead of accepting any body.
+
+## [0.1.3] - 2026-08-04
+
+### Fixed
 - `text/plain` responses from POST endpoints are accepted again after the
   JSON-only content type check introduced in 0.1.1.
 

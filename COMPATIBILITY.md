@@ -25,6 +25,9 @@ Compatibility target: Palworld v1.0.5.
 ## Notes
 
 - v1.0.5 is a hotfix release with no documented REST API changes.
+- The v1.0.4 fixture directory was renamed to v1.0.5 once to migrate from
+  API-reference naming to game-version naming. Future hotfixes without API
+  changes keep the current directory and update this file.
 - The current fixtures were built from the official API reference 1.0.4 plus
   observed fields; they are not a live capture of a v1.0.5 server.
 - Fixture provenance is recorded in `testdata/contract/v1.0.5/README.md`.

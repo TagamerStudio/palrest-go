@@ -26,7 +26,7 @@ suite with the race detector. Run it before every commit.
 | `make test`  | Tests with `-race` and verbose output.                       |
 | `make lint`  | Runs the pinned `golangci-lint` via `go run`.                |
 | `make vet`   | Runs `go vet ./...`.                                         |
-| `make fmt`   | Installs `gofumpt`/`goimports` and formats the tree.         |
+| `make fmt`   | Formats the tree with pinned `gofumpt`/`goimports`.          |
 | `make fuzz`  | Runs all fuzz targets for 30 seconds each.                   |
 | `make tidy`  | Runs `go mod tidy`.                                          |
 | `make check` | `vet` + `lint` + `test`.                                     |
@@ -91,8 +91,9 @@ version and be documented.
 
 Releases are cut from `main` by a maintainer:
 
-1. Update `CHANGELOG.md`, the current version in `AGENTS.md`, and
-   `COMPATIBILITY.md` when the targeted Palworld version changes.
+1. Update `CHANGELOG.md`, the current version in `AGENTS.md`, `README.md` when
+   the targeted Palworld version changes, `COMPATIBILITY.md`, and `SECURITY.md`
+   when the supported library line changes.
 2. Run `make check`.
 3. Commit as `chore: release vX.Y.Z` and push `main`.
 4. Wait for CI to pass on the release commit.

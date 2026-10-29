@@ -17,9 +17,9 @@ Use GitHub's private vulnerability reporting form:
 
 <https://github.com/TagamerStudio/palrest-go/security/advisories/new>
 
-If the form is unavailable, open an issue titled "Security contact request"
-without any vulnerability details and a maintainer will provide a private
-channel.
+If the form is unavailable, open an issue using the "Security contact request"
+template without any vulnerability details and a maintainer will provide a
+private channel.
 
 Include, when possible:
 
