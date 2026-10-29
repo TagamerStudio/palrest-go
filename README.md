@@ -8,7 +8,8 @@ Typed Go client for the official [Palworld server REST API](https://docs.palworl
 (`/v1/api`): server info, player list, settings, world snapshot (`/game-data`,
 with discriminated `CharacterActor`/`PalBoxActor` kinds), metrics, announce,
 kick, ban, unban, save, shutdown and stop. All endpoint methods take a
-`context.Context`; `Close()` releases connections owned by the client.
+`context.Context`; `Close()` releases idle connections held by the internally
+created client.
 
 ## Server Requirements
 
@@ -29,8 +30,8 @@ covers the documented schema plus observed fields and ignores unknown ones. See
 go get github.com/TagamerStudio/palrest-go
 ```
 
-The module path is case-sensitive: import it exactly as
-`github.com/TagamerStudio/palrest-go`.
+Requires Go 1.26 or newer. The module path is case-sensitive: import it exactly
+as `github.com/TagamerStudio/palrest-go`.
 
 ## Usage
 
@@ -74,14 +75,16 @@ func main() {
 | `WithMaxResponseBytes(n)` | Maximum accepted GET response body size in bytes (default: 10 MiB); values `<= 0` are ignored and larger responses fail with an error. Applies to every GET endpoint, including `/game-data`. API error bodies remain capped at 1 KiB, and POST responses are validated against the documented plain-text confirmation of each endpoint under a fixed 4 KiB cap. |
 
 `baseURL` may be a host with an optional port or an `http://`/`https://` URL.
-When the scheme or port is omitted, the client adds `http://` or `8212`,
-respectively. Only the root path (`/`) is allowed; other paths, query strings,
-fragments, userinfo and invalid hostnames are rejected since the client always
-calls `/v1/api` endpoints directly. The scheme is case-insensitive and
-normalized to lowercase (`HTTP://` is accepted and becomes `http://`). Ports
-outside 1–65535 are rejected. Hostnames must be valid DNS labels, so
-underscores (common in Docker Compose service names such as `pal_server`) are
-rejected.
+IPv4 and bracketed IPv6 hosts are supported (for example, `[::1]:8212`), and
+zone-scoped IPv6 addresses are accepted. When the scheme or port is omitted,
+the client adds `http://` or `8212`, respectively. Only the root path (`/`) is
+allowed; other paths, query strings, fragments, userinfo and invalid hostnames
+are rejected since the client always calls `/v1/api` endpoints directly. The
+scheme is case-insensitive and normalized to lowercase (`HTTP://` is accepted
+and becomes `http://`). Ports outside 1–65535 are rejected. Hostnames must be
+valid DNS labels, so underscores (common in Docker Compose service names such as
+`pal_server`) are rejected; use the container IP or a DNS alias without
+underscores instead.
 
 > **Large responses:** `/game-data` returns a snapshot of **every actor in the
 > world**, so on large servers it can exceed the default 10 MiB cap. If you
@@ -98,10 +101,14 @@ without accidental leading or trailing whitespace.
 
 Messages passed to `MakeAnnouncement`, `KickPlayer`, `BanPlayer` and
 `ShutdownServer` are trimmed of leading/trailing whitespace; empty messages
-are omitted from the payload (and rejected entirely for announcements).
+are omitted from the payload (and rejected entirely for announcements). User IDs
+passed to `KickPlayer`, `BanPlayer` and `UnbanPlayer` are trimmed and must not
+be empty.
 
-`ShutdownServer` accepts a non-negative `waitTime`; the official documentation
-does not define the behavior of `0` (observed server behavior is immediate shutdown). Use `StopServer` for a force stop.
+`ShutdownServer` accepts a non-negative `waitTime`, interpreted in seconds in
+observed server behavior; the official documentation does not state the unit or
+define the behavior of `0` (observed server behavior is immediate shutdown). Use
+`StopServer` for a force stop.
 
 ## Security
 
@@ -112,7 +119,9 @@ terminate TLS with a reverse proxy (e.g., Caddy or nginx) in front of the
 server and pass the `https://` URL to `NewClient`. The internally created
 client uses standard TLS certificate verification by default. `WithHTTPClient`
 is a full transport escape hatch: the injected client's timeout, redirect,
-proxy and TLS policies are caller-controlled and must be configured safely.
+proxy and TLS policies are caller-controlled and must be configured safely. See
+[SECURITY.md](SECURITY.md) for supported versions and private vulnerability
+reporting.
 
 ## Errors
 
@@ -152,9 +161,13 @@ if you inject a client via `WithHTTPClient`, its redirect policy applies.
 ## Development
 
 ```bash
-make check   # lint (golangci-lint) + tests with -race
+make check   # vet + lint (golangci-lint) + tests with -race
 make help    # list all targets
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development workflow. The
+weekly `Fuzz` workflow runs all fuzz targets and can be triggered manually from
+Actions → Fuzz → Run workflow.
 
 To measure coverage:
 

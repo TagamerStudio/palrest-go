@@ -37,9 +37,10 @@ type PlayerList struct {
 // ServerSettings contains the server settings returned by the /v1/api/settings
 // endpoint. It covers the documented schema plus fields observed in server
 // configuration, since some builds return more settings than the API reference
-// documents. The available schema can vary by server version; fields absent
-// from a response remain zero-valued and unknown fields are ignored. Numeric
-// settings are floats and toggles are booleans.
+// documents. Fields observed on game servers are kept even when the reference
+// does not list them yet. The available schema can vary by server version;
+// fields absent from a response remain zero-valued and unknown fields are
+// ignored. Numeric settings are floats and toggles are booleans.
 type ServerSettings struct {
 	Difficulty                                      string   `json:"Difficulty"`
 	RandomizerType                                  string   `json:"RandomizerType"`

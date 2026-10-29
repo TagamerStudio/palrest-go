@@ -672,10 +672,11 @@ func (c *Client) SaveServerState(ctx context.Context) error {
 	return c.post(ctx, "/save", nil, saveSuccessText)
 }
 
-// ShutdownServer shuts down the server after waitTime seconds. waitTime must
-// not be negative; the optional message is trimmed and omitted when empty.
-// The official documentation does not define the behavior of a waitTime of 0;
-// observed server behavior is immediate shutdown. Use StopServer for force stop.
+// ShutdownServer shuts down the server after waitTime. The API reference does
+// not state the unit (observed behavior is seconds) and does not define the
+// behavior of 0 (observed server behavior is immediate shutdown); waitTime must
+// not be negative. The optional message is trimmed and omitted when empty. Use
+// StopServer for force stop.
 func (c *Client) ShutdownServer(ctx context.Context, waitTime int, message string) error {
 	if waitTime < 0 {
 		return errors.New("waittime must not be negative")

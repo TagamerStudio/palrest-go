@@ -66,6 +66,8 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 feat: add a new endpoint
 fix: reject malformed responses
 refactor: simplify URL normalization
+build(deps): bump dependency
+ci: update workflows
 docs: clarify timeout behavior
 test: cover redirect handling
 chore: update tooling

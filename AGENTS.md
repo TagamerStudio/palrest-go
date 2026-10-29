@@ -19,12 +19,13 @@ Typed Go client for the official Palworld server REST API.
 - Prefer `errors.New` over `fmt.Errorf` for static strings; use `%w` when wrapping.
 - All public functions/types need Go doc comments.
 - Tests: standard `testing` package, table-driven, `*_test.go` alongside source.
-- Run `make check` before committing (lint + test).
+- Run `make check` before committing (vet + lint + test).
 
 ## Commit guidelines
 
-Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `test:`),
-one logical change per commit, `make check` before committing.
+Conventional Commits (`feat:`, `fix:`, `refactor:`, `build:`, `ci:`, `chore:`,
+`docs:`, `test:`), one logical change per commit, `make check` before
+committing.
 
 ## Versioning
 
