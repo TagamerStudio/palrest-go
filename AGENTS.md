@@ -25,7 +25,8 @@ Typed Go client for the official Palworld server REST API.
 
 Conventional Commits (`feat:`, `fix:`, `refactor:`, `build:`, `ci:`, `chore:`,
 `docs:`, `test:`), one logical change per commit, `make check` before
-committing.
+committing. Direct pushes to `main` are blocked; open a pull request and wait
+for `CI success`.
 
 ## Versioning
 

@@ -50,6 +50,22 @@ clearly justified.
 - The weekly `Fuzz` workflow runs all fuzz targets and can be triggered from
   Actions → Fuzz → Run workflow. Targets are discovered with
   `go test -list '^Fuzz'`, so new fuzz tests are picked up automatically.
+- CodeQL runs on pull requests and pushes to `main`; the scheduled Go tip
+  workflow runs separately from the PR gate.
+
+## Capturing Fixtures
+
+`scripts/capture-contract.sh` captures the GET endpoints from a live server:
+
+```bash
+./scripts/capture-contract.sh http://127.0.0.1:8212 /tmp/palrest-capture
+```
+
+The script prompts for the admin password and captures `/info`, `/players`,
+`/settings`, `/metrics` and `/game-data`. It never calls the mutating POST
+endpoints. Review the responses, compare `/settings` with `ServerSettings`, copy
+them into `testdata/contract/<palworld-version>/`, and update `COMPATIBILITY.md`
+to `tested` only after the review.
 
 ## Code Conventions
 
