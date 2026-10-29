@@ -8,19 +8,41 @@ while on `v0.x`, breaking changes bump the minor version.
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-10-29
+
 ### Added
 - Compatibility policy in `COMPATIBILITY.md` tracking Palworld game versions.
 - Fixture provenance notes in `testdata/contract/v1.0.5/README.md`.
+- Security contact request issue template for the private reporting fallback.
+- Redacted `String` and `GoString` representations for `Client` values.
 
 ### Changed
 - Contract fixtures now follow the Palworld game version (`v1.0.5`); the REST
   API reference (`1.0.4`) is recorded as the schema source.
 - Keep fields observed on game servers but absent from the reference.
-- `make fuzz` now runs all three fuzz targets instead of only the base URL
-  target.
+- Contract tests validate decoded responses against complete settings and
+  game-data fixtures.
+- `make fuzz` runs all three fuzz targets instead of only the base URL target.
+- CI exposes a stable `CI success` check; releases require it, verify the tag
+  SHA and use the CHANGELOG section for release notes.
+- `make fmt` runs the pinned formatters with `go run` instead of installing
+  them globally.
+- Documentation clarifies HTTPS port handling, module path migration, fixture
+  policy, JSON zero-value tolerance and the release checklist.
+- Correct the historical CHANGELOG attribution of exact POST validation to
+  `0.1.4`.
 
 ### Fixed
+- Prevent credential and query leakage in `NewClient` errors for malformed
+  URLs.
+- Truncate divergent POST response bodies embedded in errors.
+- Return an initialization error instead of panicking for a zero-value or nil
+  `Client`.
+- Preserve `Character` and `PalBox` payloads when marshaling an `Actor`.
 - Bump `govulncheck` to v1.9.0 so vulnerability scanning works with Go 1.27.
+
+### Security
+- Redact the password when formatting a copied `Client` value.
 
 ## [0.3.2] - 2026-10-28
 
